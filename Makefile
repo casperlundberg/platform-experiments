@@ -1,0 +1,40 @@
+EXPERIMENTS := $(sort $(notdir $(wildcard experiments/*)))
+
+.DEFAULT_GOAL := help
+
+.PHONY: help
+help: ## Show this help
+	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
+
+.PHONY: list
+list: ## List the experiments and what each one asks
+	@for dir in experiments/*/; do \
+		name=$$(basename "$$dir"); \
+		question=$$(head -1 "$$dir/README.md" | sed 's/^# //'); \
+		status=$$(grep -m1 '^\*\*Status:\*\*' "$$dir/README.md" | sed 's/\*\*Status:\*\* //'); \
+		printf "  \033[36m%-32s\033[0m %s\n      %s\n" "$$name" "$$question" "$$status"; \
+	done
+
+.PHONY: all
+all: ## Run every experiment, in order
+	@failed=0; \
+	for dir in experiments/*/; do \
+		name=$$(basename "$$dir"); \
+		printf '\n\033[1m=== %s ===\033[0m\n' "$$name"; \
+		./$$dir/run.sh || failed=$$((failed + 1)); \
+	done; \
+	if [ "$$failed" -gt 0 ]; then \
+		printf '\n\033[31m%d experiment(s) failed.\033[0m\n' "$$failed"; exit 1; \
+	fi; \
+	printf '\n\033[32mEvery experiment passed.\033[0m\n'
+
+.PHONY: run
+run: ## Run one experiment: make run N=001
+	@dir=$$(echo experiments/$(N)-*/ | head -1); \
+	[ -d "$$dir" ] || { echo "no experiment matching '$(N)'"; exit 1; }; \
+	./$$dir/run.sh
+
+.PHONY: lint
+lint: ## shellcheck every script
+	shellcheck lib/harness.sh experiments/*/run.sh
