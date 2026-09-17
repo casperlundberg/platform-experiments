@@ -1,0 +1,172 @@
+{
+  "name": "mid-run-switch",
+  "title": "Changing intent while a run is in flight",
+  "question": "What happens when an operator changes intent at the moment of a rock burst (cycle 120) or once it has passed (cycle 240), compared with holding one intent throughout?",
+  "mine": {
+    "id": "storhall",
+    "name": "Storhall",
+    "sensors": 30,
+    "background_rate_per_hour": 90
+  },
+  "scenario": {
+    "duration_seconds": 7200,
+    "job_seconds": 20,
+    "pick_jitter_seconds": 0.005,
+    "priority_mix": {
+      "100": 1,
+      "50": 1,
+      "25": 2
+    },
+    "bursts": [
+      {
+        "at_seconds": 1800,
+        "magnitude": 45,
+        "aftershock_decay_seconds": 1800
+      }
+    ]
+  },
+  "run": {
+    "decision_interval_seconds": 15
+  },
+  "settings": {
+    "local_executor_cap": 12,
+    "cloud_executor_cap": 60,
+    "local_coldstart_seconds": 60,
+    "cloud_coldstart_seconds": 180
+  },
+  "intent": {
+    "mode": "decay",
+    "knowledge": "estimate",
+    "pre_location": false,
+    "pre_location_magnitude": 1.5,
+    "protect": [
+      "person",
+      "crewed-vehicle",
+      "autonomous-vehicle"
+    ],
+    "lookahead_seconds": 300,
+    "protect_level": "moderate",
+    "promote_level": "high",
+    "margin_m": 0,
+    "location_uncertainty_m": 50,
+    "decay_to": 0,
+    "promote_to": 400,
+    "deadline_from": "arrival",
+    "restore": true,
+    "burst_exempt": []
+  },
+  "seeds": [
+    101,
+    202,
+    303,
+    404,
+    505,
+    606
+  ],
+  "axes": [
+    {
+      "name": "intent",
+      "values": [
+        {
+          "label": "off throughout",
+          "intent": {
+            "mode": "off"
+          }
+        },
+        {
+          "label": "decay throughout",
+          "intent": {
+            "burst_exempt": [
+              "restored"
+            ]
+          }
+        },
+        {
+          "label": "off, decay at the burst",
+          "intent": {
+            "mode": "off",
+            "burst_exempt": [
+              "restored"
+            ]
+          },
+          "intent_schedule": [
+            {
+              "cycle": 120,
+              "settings": {
+                "mode": "decay"
+              }
+            }
+          ]
+        },
+        {
+          "label": "decay, off at the burst",
+          "intent": {
+            "burst_exempt": [
+              "restored"
+            ]
+          },
+          "intent_schedule": [
+            {
+              "cycle": 120,
+              "settings": {
+                "mode": "off"
+              }
+            }
+          ]
+        },
+        {
+          "label": "decay, both at the burst",
+          "intent": {
+            "burst_exempt": [
+              "restored"
+            ]
+          },
+          "intent_schedule": [
+            {
+              "cycle": 120,
+              "settings": {
+                "mode": "both",
+                "burst_exempt": [
+                  "promoted",
+                  "restored"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "label": "both at the burst, decay after",
+          "intent": {
+            "burst_exempt": [
+              "restored"
+            ]
+          },
+          "intent_schedule": [
+            {
+              "cycle": 120,
+              "settings": {
+                "mode": "both",
+                "burst_exempt": [
+                  "promoted",
+                  "restored"
+                ]
+              }
+            },
+            {
+              "cycle": 240,
+              "settings": {
+                "mode": "decay",
+                "burst_exempt": [
+                  "restored"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "baseline": {
+    "intent": "off throughout"
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "name": "lookahead-uncertainty",
+  "title": "How far ahead to protect, and how much to allow for location error",
+  "question": "How do the lookahead along planned routes and the allowance for location error trade misses (endangering events decayed) against how much work is relaxed?",
+  "mine": {
+    "id": "storhall",
+    "name": "Storhall",
+    "sensors": 30,
+    "background_rate_per_hour": 90
+  },
+  "scenario": {
+    "duration_seconds": 7200,
+    "job_seconds": 20,
+    "pick_jitter_seconds": 0.005,
+    "priority_mix": {
+      "100": 1,
+      "50": 1,
+      "25": 2
+    },
+    "bursts": [
+      {
+        "at_seconds": 1800,
+        "magnitude": 45,
+        "aftershock_decay_seconds": 1800
+      }
+    ]
+  },
+  "run": {
+    "decision_interval_seconds": 15
+  },
+  "settings": {
+    "local_executor_cap": 12,
+    "cloud_executor_cap": 60,
+    "local_coldstart_seconds": 60,
+    "cloud_coldstart_seconds": 180
+  },
+  "intent": {
+    "mode": "decay",
+    "knowledge": "estimate",
+    "pre_location": false,
+    "pre_location_magnitude": 1.5,
+    "protect": [
+      "person",
+      "crewed-vehicle",
+      "autonomous-vehicle"
+    ],
+    "lookahead_seconds": 300,
+    "protect_level": "moderate",
+    "promote_level": "high",
+    "margin_m": 0,
+    "location_uncertainty_m": 50,
+    "decay_to": 0,
+    "promote_to": 400,
+    "deadline_from": "arrival",
+    "restore": true,
+    "burst_exempt": []
+  },
+  "seeds": [
+    101,
+    202,
+    303,
+    404,
+    505,
+    606
+  ],
+  "axes": [
+    {
+      "name": "intent",
+      "values": [
+        {
+          "label": "off",
+          "intent": {
+            "mode": "off"
+          }
+        },
+        {
+          "label": "decay, restored exempt",
+          "intent": {
+            "burst_exempt": [
+              "restored"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "lookahead",
+      "values": [
+        {
+          "label": "lookahead 0s",
+          "intent": {
+            "lookahead_seconds": 0
+          }
+        },
+        {
+          "label": "lookahead 120s",
+          "intent": {
+            "lookahead_seconds": 120
+          }
+        },
+        {
+          "label": "lookahead 300s",
+          "intent": {
+            "lookahead_seconds": 300
+          }
+        },
+        {
+          "label": "lookahead 900s",
+          "intent": {
+            "lookahead_seconds": 900
+          }
+        }
+      ]
+    },
+    {
+      "name": "uncertainty",
+      "values": [
+        {
+          "label": "\u00b10 m",
+          "intent": {
+            "location_uncertainty_m": 0
+          }
+        },
+        {
+          "label": "\u00b150 m",
+          "intent": {
+            "location_uncertainty_m": 50
+          }
+        },
+        {
+          "label": "\u00b1150 m",
+          "intent": {
+            "location_uncertainty_m": 150
+          }
+        }
+      ]
+    }
+  ],
+  "exclude": [
+    {
+      "intent": "off",
+      "lookahead": "lookahead 0s"
+    },
+    {
+      "intent": "off",
+      "lookahead": "lookahead 120s"
+    },
+    {
+      "intent": "off",
+      "lookahead": "lookahead 900s"
+    },
+    {
+      "intent": "off",
+      "uncertainty": "\u00b10 m"
+    },
+    {
+      "intent": "off",
+      "uncertainty": "\u00b1150 m"
+    }
+  ],
+  "baseline": {
+    "intent": "off",
+    "lookahead": "lookahead 300s",
+    "uncertainty": "\u00b150 m"
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "name": "cloud-caps",
+  "title": "Intent against the cloud budget",
+  "question": "Does what intent buys depend on how much cloud capacity there is to spend \u2014 none, a little, the default, or plenty?",
+  "mine": {
+    "id": "storhall",
+    "name": "Storhall",
+    "sensors": 30,
+    "background_rate_per_hour": 90
+  },
+  "scenario": {
+    "duration_seconds": 7200,
+    "job_seconds": 20,
+    "pick_jitter_seconds": 0.005,
+    "priority_mix": {
+      "100": 1,
+      "50": 1,
+      "25": 2
+    },
+    "bursts": [
+      {
+        "at_seconds": 1800,
+        "magnitude": 45,
+        "aftershock_decay_seconds": 1800
+      }
+    ]
+  },
+  "run": {
+    "decision_interval_seconds": 15
+  },
+  "settings": {
+    "local_executor_cap": 12,
+    "cloud_executor_cap": 60,
+    "local_coldstart_seconds": 60,
+    "cloud_coldstart_seconds": 180
+  },
+  "intent": {
+    "mode": "decay",
+    "knowledge": "estimate",
+    "pre_location": false,
+    "pre_location_magnitude": 1.5,
+    "protect": [
+      "person",
+      "crewed-vehicle",
+      "autonomous-vehicle"
+    ],
+    "lookahead_seconds": 300,
+    "protect_level": "moderate",
+    "promote_level": "high",
+    "margin_m": 0,
+    "location_uncertainty_m": 50,
+    "decay_to": 0,
+    "promote_to": 400,
+    "deadline_from": "arrival",
+    "restore": true,
+    "burst_exempt": []
+  },
+  "seeds": [
+    101,
+    202,
+    303,
+    404,
+    505,
+    606
+  ],
+  "axes": [
+    {
+      "name": "cloud cap",
+      "values": [
+        {
+          "label": "cloud 0",
+          "settings": {
+            "cloud_executor_cap": 0
+          }
+        },
+        {
+          "label": "cloud 20",
+          "settings": {
+            "cloud_executor_cap": 20
+          }
+        },
+        {
+          "label": "cloud 60",
+          "settings": {
+            "cloud_executor_cap": 60
+          }
+        },
+        {
+          "label": "cloud 200",
+          "settings": {
+            "cloud_executor_cap": 200
+          }
+        }
+      ]
+    },
+    {
+      "name": "intent",
+      "values": [
+        {
+          "label": "off",
+          "intent": {
+            "mode": "off"
+          }
+        },
+        {
+          "label": "decay, final",
+          "intent": {
+            "restore": false
+          }
+        },
+        {
+          "label": "decay, restored exempt",
+          "intent": {
+            "burst_exempt": [
+              "restored"
+            ]
+          }
+        },
+        {
+          "label": "both, exempt",
+          "intent": {
+            "mode": "both",
+            "burst_exempt": [
+              "promoted",
+              "restored"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "baseline": {
+    "intent": "off"
+  }
+}
