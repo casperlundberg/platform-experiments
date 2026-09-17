@@ -1,0 +1,166 @@
+{
+  "name": "intent-modes",
+  "title": "Intent modes, estimate against oracle",
+  "question": "What does each intent mode do to SLA breaches, cloud cost and how soon events that endanger people are located \u2014 from the mine's own estimates, and from the truth?",
+  "mine": {
+    "id": "storhall",
+    "name": "Storhall",
+    "sensors": 30,
+    "background_rate_per_hour": 90
+  },
+  "scenario": {
+    "duration_seconds": 7200,
+    "job_seconds": 20,
+    "pick_jitter_seconds": 0.005,
+    "priority_mix": {
+      "100": 1,
+      "50": 1,
+      "25": 2
+    },
+    "bursts": [
+      {
+        "at_seconds": 1800,
+        "magnitude": 45,
+        "aftershock_decay_seconds": 1800
+      }
+    ]
+  },
+  "run": {
+    "decision_interval_seconds": 15
+  },
+  "settings": {
+    "local_executor_cap": 12,
+    "cloud_executor_cap": 60,
+    "local_coldstart_seconds": 60,
+    "cloud_coldstart_seconds": 180
+  },
+  "intent": {
+    "mode": "decay",
+    "knowledge": "estimate",
+    "pre_location": false,
+    "pre_location_magnitude": 1.5,
+    "protect": [
+      "person",
+      "crewed-vehicle",
+      "autonomous-vehicle"
+    ],
+    "lookahead_seconds": 300,
+    "protect_level": "moderate",
+    "promote_level": "high",
+    "margin_m": 0,
+    "location_uncertainty_m": 50,
+    "decay_to": 0,
+    "promote_to": 400,
+    "deadline_from": "arrival",
+    "restore": true,
+    "burst_exempt": []
+  },
+  "seeds": [
+    101,
+    202,
+    303,
+    404,
+    505,
+    606
+  ],
+  "axes": [
+    {
+      "name": "intent",
+      "values": [
+        {
+          "label": "off",
+          "intent": {
+            "mode": "off"
+          }
+        },
+        {
+          "label": "decay",
+          "intent": {}
+        },
+        {
+          "label": "decay, final",
+          "intent": {
+            "restore": false
+          }
+        },
+        {
+          "label": "decay, restored exempt",
+          "intent": {
+            "burst_exempt": [
+              "restored"
+            ]
+          }
+        },
+        {
+          "label": "decay, clock restarts",
+          "intent": {
+            "deadline_from": "change"
+          }
+        },
+        {
+          "label": "promote",
+          "intent": {
+            "mode": "promote"
+          }
+        },
+        {
+          "label": "promote, exempt",
+          "intent": {
+            "mode": "promote",
+            "burst_exempt": [
+              "promoted",
+              "restored"
+            ]
+          }
+        },
+        {
+          "label": "both",
+          "intent": {
+            "mode": "both"
+          }
+        },
+        {
+          "label": "both, exempt",
+          "intent": {
+            "mode": "both",
+            "burst_exempt": [
+              "promoted",
+              "restored"
+            ]
+          }
+        },
+        {
+          "label": "both, clock restarts",
+          "intent": {
+            "mode": "both",
+            "deadline_from": "change"
+          }
+        }
+      ]
+    },
+    {
+      "name": "knowledge",
+      "values": [
+        {
+          "label": "estimate"
+        },
+        {
+          "label": "truth",
+          "intent": {
+            "knowledge": "truth"
+          }
+        }
+      ]
+    }
+  ],
+  "exclude": [
+    {
+      "intent": "off",
+      "knowledge": "truth"
+    }
+  ],
+  "baseline": {
+    "intent": "off",
+    "knowledge": "estimate"
+  }
+}

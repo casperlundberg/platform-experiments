@@ -1,0 +1,129 @@
+{
+  "name": "pick-jitter",
+  "title": "Intent against pick error",
+  "question": "How good do the mine's locations have to be before ordering by them stops helping, measured against the oracle that knows where every event was?",
+  "mine": {
+    "id": "storhall",
+    "name": "Storhall",
+    "sensors": 30,
+    "background_rate_per_hour": 90
+  },
+  "scenario": {
+    "duration_seconds": 7200,
+    "job_seconds": 20,
+    "pick_jitter_seconds": 0.005,
+    "priority_mix": {
+      "100": 1,
+      "50": 1,
+      "25": 2
+    },
+    "bursts": [
+      {
+        "at_seconds": 1800,
+        "magnitude": 45,
+        "aftershock_decay_seconds": 1800
+      }
+    ]
+  },
+  "run": {
+    "decision_interval_seconds": 15
+  },
+  "settings": {
+    "local_executor_cap": 12,
+    "cloud_executor_cap": 60,
+    "local_coldstart_seconds": 60,
+    "cloud_coldstart_seconds": 180
+  },
+  "intent": {
+    "mode": "decay",
+    "knowledge": "estimate",
+    "pre_location": false,
+    "pre_location_magnitude": 1.5,
+    "protect": [
+      "person",
+      "crewed-vehicle",
+      "autonomous-vehicle"
+    ],
+    "lookahead_seconds": 300,
+    "protect_level": "moderate",
+    "promote_level": "high",
+    "margin_m": 0,
+    "location_uncertainty_m": 50,
+    "decay_to": 0,
+    "promote_to": 400,
+    "deadline_from": "arrival",
+    "restore": true,
+    "burst_exempt": []
+  },
+  "seeds": [
+    101,
+    202,
+    303,
+    404,
+    505,
+    606
+  ],
+  "axes": [
+    {
+      "name": "jitter",
+      "values": [
+        {
+          "label": "jitter 0 ms",
+          "scenario": {
+            "pick_jitter_seconds": 0.0
+          }
+        },
+        {
+          "label": "jitter 5 ms",
+          "scenario": {
+            "pick_jitter_seconds": 0.005
+          }
+        },
+        {
+          "label": "jitter 20 ms",
+          "scenario": {
+            "pick_jitter_seconds": 0.02
+          }
+        },
+        {
+          "label": "jitter 50 ms",
+          "scenario": {
+            "pick_jitter_seconds": 0.05
+          }
+        }
+      ]
+    },
+    {
+      "name": "intent",
+      "values": [
+        {
+          "label": "off",
+          "intent": {
+            "mode": "off"
+          }
+        },
+        {
+          "label": "decay, restored exempt",
+          "intent": {
+            "burst_exempt": [
+              "restored"
+            ]
+          }
+        },
+        {
+          "label": "decay, restored exempt, truth",
+          "intent": {
+            "burst_exempt": [
+              "restored"
+            ],
+            "knowledge": "truth"
+          }
+        }
+      ]
+    }
+  ],
+  "baseline": {
+    "jitter": "jitter 5 ms",
+    "intent": "off"
+  }
+}

@@ -40,6 +40,19 @@ reproduce: ## Rebuild a recorded run's code and replay it: make reproduce RUN=ru
 	@[ -n "$(RUN)" ] || { echo "name the run: make reproduce RUN=run-id"; exit 1; }
 	lib/reproduce.sh $(RUN)
 
+.PHONY: sweep
+sweep: ## Run a sweep and write its report: make sweep S=intent-modes
+	@[ -n "$(S)" ] || { echo "name the sweep: make sweep S=name (one of: $$(ls sweeps/*.json | xargs -n1 basename | sed 's/.json//' | tr '\n' ' '))"; exit 1; }
+	lib/sweep.sh sweeps/$(S).json
+
+.PHONY: sweeps
+sweeps: ## Run every sweep, in order
+	@for s in sweeps/*.json; do lib/sweep.sh "$$s" || exit 1; done
+
+.PHONY: report
+report: ## Rewrite a sweep's report from what it recorded: make report S=intent-modes
+	python3 lib/sweep.py report reports/$(S)
+
 .PHONY: lint
 lint: ## shellcheck every script
-	shellcheck lib/harness.sh lib/reproduce.sh experiments/*/run.sh
+	shellcheck lib/harness.sh lib/reproduce.sh lib/sweep.sh experiments/*/run.sh
