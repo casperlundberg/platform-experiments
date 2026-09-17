@@ -83,6 +83,14 @@ rerunning anything. Pin the whole starting intent in a definition, never rely
 on a default. Rerunning at the same commits must reproduce `runs.csv` exactly —
 if it does not, something non-deterministic has crept in, and that is a defect.
 
+## The operational extract
+
+`../data/` (workspace root, outside every repository) holds an extract of a real
+mine's processing pipeline. **It is never committed and no row from it is
+quoted anywhere.** Aggregates are fine, and `docs/calibration.md` holds the ones
+the `workday` mine was fitted to. Read that file before changing that mine or
+its day; the fit, and what it does not carry, are written down there.
+
 ## Findings
 
 `findings/NNN-*.md`, one per defect: what happened, when it fired, why it

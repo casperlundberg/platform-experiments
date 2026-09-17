@@ -107,6 +107,7 @@ make report S=intent-modes  # rewrite a report from what was recorded, e.g. afte
 ```
 
 ```
+docs/calibration.md  how the workday mine was fitted to an operational catalogue
 sweeps/NAME.json   the definition: mine, scenario, settings, intent, seeds, axes, baseline
 sweeps/NAME.md     the reading: what the numbers say, written by a person, kept with the definition
 reports/NAME/      what the sweep produced
@@ -129,6 +130,9 @@ axes: each arm is then compared with the baseline on those axes and its own
 labels on the rest — intent against no intent at the same cloud cap, say.
 
 [`reports/README.md`](reports/README.md) lists the reports and what each found.
+One mine and one day in them are fitted to a real pipeline's records rather than
+chosen: [`docs/calibration.md`](docs/calibration.md) says how, in aggregates.
+That extract lives outside every repository and stays there.
 
 ## Writing one
 
