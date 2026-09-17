@@ -35,6 +35,11 @@ run: ## Run one experiment: make run N=001
 	[ -d "$$dir" ] || { echo "no experiment matching '$(N)'"; exit 1; }; \
 	./$$dir/run.sh
 
+.PHONY: reproduce
+reproduce: ## Rebuild a recorded run's code and replay it: make reproduce RUN=run-id
+	@[ -n "$(RUN)" ] || { echo "name the run: make reproduce RUN=run-id"; exit 1; }
+	lib/reproduce.sh $(RUN)
+
 .PHONY: lint
 lint: ## shellcheck every script
-	shellcheck lib/harness.sh experiments/*/run.sh
+	shellcheck lib/harness.sh lib/reproduce.sh experiments/*/run.sh

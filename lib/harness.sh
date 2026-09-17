@@ -110,8 +110,11 @@ harness::build() {
       exit 1
     }
   done
-  (cd "$AUTOSCALER_DIR" && go build -o "$WORK/autoscaler" ./cmd/autoscaler)
-  (cd "$SIMLAB_DIR" && go build -o "$WORK/simlab-api" ./cmd/simlab-api)
+  # Through each repository's own `make build`, which stamps the binary with its
+  # version, commit and whether the tree was clean — so every run an experiment
+  # records carries a provenance that says truthfully which code produced it.
+  (cd "$AUTOSCALER_DIR" && make build >/dev/null && cp bin/autoscaler "$WORK/autoscaler")
+  (cd "$SIMLAB_DIR" && make build >/dev/null && cp bin/simlab-api "$WORK/simlab-api")
 }
 
 # harness::start_autoscaler keeps its state in $WORK/targets.json, so an

@@ -46,6 +46,8 @@ experiments/NNN-short-name/
 └── run.sh       the experiment, exiting non-zero if a check fails
 findings/        write-ups of what was found, one per defect
 lib/harness.sh   builds and starts the stack; shared assertions
+lib/reproduce.sh rebuilds a recorded run's code and replays it (make reproduce)
+lib/results.py   fetches a run's results and compares two runs field by field
 ```
 
 Experiments are numbered in the order they were written and are not renumbered,
@@ -65,6 +67,32 @@ Needs Docker and Go, and the four sibling repositories checked out alongside.
 
 The harness runs on its own ports (18290, 18291, 15434) so an experiment can
 run while a development stack or `verify.sh` is up.
+
+## Reproducing a run
+
+Every run records its provenance as it begins: both services' semantic
+versions, commits, whether their trees were modified, Go versions and platform,
+and copies of the mine, scenario and effective settings it was given. The
+database is tied to the code by commit hash; nothing about the data is checked
+in.
+
+```bash
+make reproduce RUN=<run-id>
+```
+
+checks out both services at the recorded commits, builds them with the recorded
+Go toolchain, replays the run from its provenance on a fresh database, and
+compares every metric, cycle, seismic event and track with the original. It
+exits zero only on an identical replay, and refuses — with the reason — a run
+that cannot be reproduced: one from before provenance, a live run, or one from a
+build with uncommitted changes. By default it reads the deployed platform
+through `platform-deploy/scripts/simlab-env.sh`; `SOURCE_URL` and
+`SOURCE_TOKEN` point it anywhere else. Experiment 005 is the proof that this
+works, and that it can fail.
+
+Versions are cut in each service repository with `make release
+VERSION=x.y.z`; see the "Versions" section of each README for what a MAJOR,
+MINOR or PATCH release promises.
 
 ## Writing one
 
