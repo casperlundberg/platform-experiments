@@ -417,7 +417,9 @@ def write_report(out_dir, notes_path=None):
         others = [a for a in axis_names if a not in baseline]
         heading = f"### Against {arm_name(baseline)}" + (f", at the same {' and '.join(others)}" if others else "")
         lines += [heading, "",
-                  "Mean over seeds of each seed's change against the reference run of the same seed.", "",
+                  "The change in each measure summed over seeds, against the reference arm on the same "
+                  "seeds. Totals rather than a mean of per-seed percentages, which a seed with a handful "
+                  "of breaches would dominate.", "",
                   "| Arm | Breaches | As submitted | Cloud h | Locate exposing, mean | Process exposing, mean |", "|---|---:|---:|---:|---:|---:|"]
         for labels, arm_rows in arms:
             reference = {**labels, **baseline}
@@ -429,13 +431,14 @@ def write_report(out_dir, notes_path=None):
             deltas = []
             for field in ("sla_breaches", "sla_breaches_as_submitted", "cloud_hours", "ttl_exposing_mean_s",
                           "ttp_exposing_mean_s"):
-                changes = []
+                ours = theirs = 0.0
+                paired = 0
                 for row in arm_rows:
                     ref = next((b for b in base_rows if b["seed"] == row["seed"]), None)
                     a, b = number(row[field]), number(ref[field]) if ref else None
-                    if a is not None and b:
-                        changes.append((a - b) / b * 100)
-                deltas.append(f"{statistics.fmean(changes):+.0f} %" if changes else "–")
+                    if a is not None and b is not None:
+                        ours, theirs, paired = ours + a, theirs + b, paired + 1
+                deltas.append(f"{(ours - theirs) / theirs * 100:+.0f} %" if paired and theirs else "–")
             lines.append(f"| {arm_name(labels)} | " + " | ".join(deltas) + " |")
         lines.append("")
 
@@ -452,6 +455,10 @@ def write_report(out_dir, notes_path=None):
         "Per-seed figures, with every measured column, are in [`runs.csv`](runs.csv).",
         "",
     ]
+    rendered = subprocess.run(["git", "-C", os.path.dirname(os.path.abspath(__file__)), "rev-parse", "--short=12", "HEAD"],
+                              capture_output=True, text=True).stdout.strip()
+    if rendered:
+        lines += [f"<sub>Tables rendered by platform-experiments `{rendered}`.</sub>", ""]
     with open(os.path.join(out_dir, "report.md"), "w") as f:
         f.write("\n".join(lines))
 
