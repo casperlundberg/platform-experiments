@@ -190,8 +190,10 @@ def run_sweep(base, sweep_path, reports_dir, parallel=4):
         "autoscaler": versions.get("autoscaler"),
         # The sweep definition and what is measured live here, so this
         # repository's commit is part of what produced the numbers too.
+        # Modified means the measuring code or the definitions differ from the
+        # commit; anything else in this repository cannot change a number.
         "platform_experiments": {"commit": git("rev-parse", "HEAD"),
-                                 "modified": bool(git("status", "--porcelain", "--untracked-files=no"))},
+                                 "modified": bool(git("status", "--porcelain", "--", "lib", "sweeps"))},
         "runs": total,
         "wall_seconds": round(time.time() - started),
         "runs_csv_sha256": digest,
@@ -406,14 +408,23 @@ def write_report(out_dir, notes_path=None):
             cell(aggregate(arm_rows, field), places) for field, _, places in HEADLINE) + " |")
     lines.append("")
 
+    # The baseline names some or all of the axes. Each arm is compared with the
+    # arm that has the baseline's labels on those axes and its own on the rest,
+    # so a sweep across cloud caps compares intent with no intent at the same
+    # cap rather than everything with one cap.
     baseline = sweep.get("baseline")
     if baseline:
-        base_rows = [r for r in rows if all(r[k] == v for k, v in baseline.items())]
-        lines += [f"### Against {arm_name(baseline)}", "",
-                  "Mean over seeds of each seed's change against the baseline run of the same seed.", "",
+        others = [a for a in axis_names if a not in baseline]
+        heading = f"### Against {arm_name(baseline)}" + (f", at the same {' and '.join(others)}" if others else "")
+        lines += [heading, "",
+                  "Mean over seeds of each seed's change against the reference run of the same seed.", "",
                   "| Arm | Breaches | As submitted | Cloud h | Locate exposing, mean | Process exposing, mean |", "|---|---:|---:|---:|---:|---:|"]
         for labels, arm_rows in arms:
-            if labels == baseline:
+            reference = {**labels, **baseline}
+            if labels == reference:
+                continue
+            base_rows = [r for r in rows if all(r[k] == v for k, v in reference.items())]
+            if not base_rows:
                 continue
             deltas = []
             for field in ("sla_breaches", "sla_breaches_as_submitted", "cloud_hours", "ttl_exposing_mean_s",

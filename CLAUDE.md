@@ -72,6 +72,17 @@ records a failure rather than aborting, so one experiment reports every problem
 it found in a single run. End with `harness::finish`, which sets the exit
 status.
 
+## Sweeps
+
+`make sweep S=NAME` runs `sweeps/NAME.json` against both services built from
+clean checkouts of their committed HEAD and writes `reports/NAME/`. Commit the
+service changes first: uncommitted work is not in a sweep, and a report names
+the commits it came from. The reading in `sweeps/NAME.md` is merged into the
+report; after editing it, `make report S=NAME` rewrites the report without
+rerunning anything. Pin the whole starting intent in a definition, never rely
+on a default. Rerunning at the same commits must reproduce `runs.csv` exactly —
+if it does not, something non-deterministic has crept in, and that is a defect.
+
 ## Findings
 
 `findings/NNN-*.md`, one per defect: what happened, when it fired, why it

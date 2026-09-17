@@ -123,7 +123,6 @@
     }
   ],
   "baseline": {
-    "jitter": "jitter 5 ms",
     "intent": "off"
   }
 }

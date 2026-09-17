@@ -94,6 +94,42 @@ Versions are cut in each service repository with `make release
 VERSION=x.y.z`; see the "Versions" section of each README for what a MAJOR,
 MINOR or PATCH release promises.
 
+## Sweeps and reports
+
+An experiment checks a property and passes or fails. A **sweep** measures: it
+runs every combination of its axes — intent, autoscaler settings, scenario
+changes — on every seed, and writes a report to read.
+
+```bash
+make sweep S=intent-modes   # one sweep
+make sweeps                 # all of them
+make report S=intent-modes  # rewrite a report from what was recorded, e.g. after editing its reading
+```
+
+```
+sweeps/NAME.json   the definition: mine, scenario, settings, intent, seeds, axes, baseline
+sweeps/NAME.md     the reading: what the numbers say, written by a person, kept with the definition
+reports/NAME/      what the sweep produced
+  report.md        the tables, the reading, and how to regenerate them
+  runs.csv         every run, every measured column
+  sweep.json       the definition as it was run
+  provenance.json  both services' builds, this repository's commit, the digest of runs.csv
+```
+
+Both services are built from clean checkouts of each repository's committed
+HEAD, never the working tree, so a report can say truthfully which code
+produced every number. Everything is deterministic in the commits and the
+definition: rerunning a sweep at the same commits reproduces `runs.csv` byte for
+byte, which its recorded digest lets anyone check. Reports hold aggregates of
+simulated runs only.
+
+Each definition pins the whole intent it starts from, so a later change to a
+default cannot quietly change what an arm means. A baseline may name only some
+axes: each arm is then compared with the baseline on those axes and its own
+labels on the rest — intent against no intent at the same cloud cap, say.
+
+[`reports/README.md`](reports/README.md) lists the reports and what each found.
+
 ## Writing one
 
 Start from the question, not the code. An experiment that cannot say what it
