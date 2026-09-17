@@ -96,8 +96,13 @@ harness::postgres() {
     -p "$PG_PORT:5432" postgres:16-alpine >/dev/null
   OWN_POSTGRES=1
   POSTGRES_URL="postgres://simlab:simlab@127.0.0.1:$PG_PORT/experiments?sslmode=disable"
+  # Over TCP, not the socket. A new Postgres container first runs a temporary
+  # server for initdb that listens on its socket only, then restarts; a check
+  # on the socket passes against that one, and a client connecting over TCP a
+  # moment later is reset. Nothing noticed while every caller compiled for a
+  # while after starting Postgres — reproduce.sh compiles first, and did.
   for _ in $(seq 1 160); do
-    docker exec "$PG_CONTAINER" pg_isready -U simlab >/dev/null 2>&1 && break
+    docker exec "$PG_CONTAINER" pg_isready -U simlab -h 127.0.0.1 >/dev/null 2>&1 && break
     sleep 0.5
   done
 }
