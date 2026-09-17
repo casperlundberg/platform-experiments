@@ -12,6 +12,7 @@ runs first part ways, is not something to do with grep.
 
 import json
 import sys
+import urllib.error
 import urllib.request
 from datetime import datetime
 
@@ -38,9 +39,21 @@ def paged(base, token, path, key):
         cursor = page["next"]
 
 
+def intent_of(base, token, run_id):
+    """A run's intent record, or None for a run with none — a live run, or one
+    created before intent existed, which reordered nothing."""
+    try:
+        return get(base, token, f"/api/runs/{run_id}/intent")
+    except urllib.error.HTTPError as err:
+        if err.code == 404:
+            return None
+        raise
+
+
 def fetch(base, token, run_id, out_path):
     results = {
         "detail": get(base, token, f"/api/runs/{run_id}"),
+        "intent": intent_of(base, token, run_id),
         "metrics": get(base, token, f"/api/runs/{run_id}/metrics"),
         "cycles": paged(base, token, f"/api/runs/{run_id}/cycles", "cycles"),
         "seismicity": paged(base, token, f"/api/runs/{run_id}/seismicity", "events"),
@@ -67,11 +80,14 @@ def normalise(results):
         row = strip(cycle)
         row["at"] = (instant(cycle["at"]) - start).total_seconds()
         cycles.append(row)
+    intent = results.get("intent")
+    changes = [{k: v for k, v in c.items() if k != "recorded_at"} for c in (intent or {}).get("changes", [])]
     return {
         "metrics": strip(results["metrics"]),
         "cycles": cycles,
         "seismicity": [strip(e) for e in results["seismicity"]],
         "entities": results["entities"],
+        "intent": changes,
     }
 
 
@@ -105,7 +121,7 @@ def compare(original_path, replay_path):
         replay = normalise(json.load(f))
 
     differences = 0
-    for section in ("metrics", "cycles", "seismicity", "entities"):
+    for section in ("metrics", "cycles", "seismicity", "entities", "intent"):
         found = first_difference(original[section], replay[section], section)
         size = len(original[section]) if isinstance(original[section], list) else len(original[section])
         if found:

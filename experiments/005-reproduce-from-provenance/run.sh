@@ -39,15 +39,31 @@ curl -sf "$API/api/scenarios" -H 'Content-Type: application/json' -d '{
   "workforce":{"people":6,"crewed_vehicles":3,"autonomous_vehicles":2},
   "bursts":[{"at_seconds":600,"magnitude":30,"aftershock_decay_seconds":900,"main_magnitude":3.1}]}' >/dev/null
 
+# record NAME COMPRESSION [EXTRA JSON FIELDS]
 record() {
   curl -sf "$API/api/runs" -H 'Content-Type: application/json' -d "{
     \"name\": \"$1\", \"mode\": \"simulation\", \"scenario_id\": \"burst\",
-    \"decision_interval_seconds\": 15, \"time_compression\": 100000,
-    \"settings\": {\"local_executor_cap\": 12, \"cloud_executor_cap\": 30, \"cloud_coldstart_seconds\": 120}}" \
+    \"decision_interval_seconds\": 15, \"time_compression\": $2,
+    \"settings\": {\"local_executor_cap\": 12, \"cloud_executor_cap\": 30, \"cloud_coldstart_seconds\": 120}
+    ${3:+, $3}}" \
     | harness::json 'd["id"]'
 }
-original=$(record "Original")
+# Intent that moves work both ways, a change planned for a later cycle, and a
+# change made by hand while the run is in flight — slow enough to be caught in
+# flight. The hand edit lands at whatever cycle it lands at; that cycle is part
+# of what the run recorded, and replaying it is the point.
+original=$(record "Original" 600 '"intent": {"mode": "both", "burst_exempt": ["restored"]},
+  "intent_schedule": [{"cycle": 40, "settings": {"lookahead_seconds": 60}}]')
+# Straight away: the run is in flight from the moment it is created, and at
+# this pace it stays so for several seconds.
+curl -sf -X PATCH "$API/api/runs/$original/intent" -H 'Content-Type: application/json' \
+  -d '{"mode": "decay", "restore": false}' >/dev/null \
+  || harness::bad "intent could not be changed while the run was in flight"
 harness::expect "the original run completed" "$(harness::run_to_completion "$original")" "completed"
+# The hand edit may land before the first cycle, in which case the intent the
+# run was created with never took effect and is not recorded as having done so.
+sources=$(curl -sf "$API/api/runs/$original/intent" | harness::json '",".join(sorted({c["source"] for c in d["changes"]} - {"initial"}))')
+harness::expect "the original recorded its planned and its hand-made intent change" "$sources" "operator,schedule"
 
 # The scenario is changed after the run, as a person tidying up would. A
 # reproduction that read the scenario rather than the provenance would now
@@ -91,7 +107,7 @@ echo "// an uncommitted change" > "$WORK/src/simlab-api/internal/uncommitted.go"
 (cd "$WORK/src/simlab-api" && make build >/dev/null && cp bin/simlab-api "$WORK/simlab-api")
 harness::start_autoscaler
 harness::start_simlab
-dirty=$(record "From a modified build")
+dirty=$(record "From a modified build" 100000)
 harness::expect "the run from the modified build completed" "$(harness::run_to_completion "$dirty")" "completed"
 
 if SOURCE_URL="$API" SOURCE_TOKEN="" "$EXPERIMENTS_DIR/lib/reproduce.sh" "$dirty" > "$WORK/refuse.log" 2>&1; then

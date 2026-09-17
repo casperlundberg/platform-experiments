@@ -98,13 +98,14 @@ harness::start_simlab
 harness::ok "autoscaler on :$AUTOSCALER_PORT, simlab-api on :$SIMLAB_PORT"
 
 harness::log "Replaying from the recorded mine, scenario and settings"
-python3 - "$WORK/detail.json" "$WORK" <<'PY'
+python3 - "$WORK/original.json" "$WORK" <<'PY'
 import json, sys
-detail = json.load(open(sys.argv[1]))
+original = json.load(open(sys.argv[1]))
+detail, record = original["detail"], original.get("intent")
 p, run = detail["provenance"], detail["run"]
 json.dump(p["mine"], open(f"{sys.argv[2]}/mine.json", "w"))
 json.dump(p["scenario"], open(f"{sys.argv[2]}/scenario.json", "w"))
-json.dump({
+body = {
     "name": f"Reproduction of {run['id']}",
     "mode": "simulation",
     "scenario_id": p["scenario"]["id"],
@@ -113,7 +114,21 @@ json.dump({
     # a run records.
     "time_compression": 1000000,
     "settings": p["settings"],
-}, open(f"{sys.argv[2]}/run.json", "w"))
+    # A run from before intent reordered nothing, and a run created now
+    # without saying so would decay.
+    "intent": (p.get("intent") or {}).get("settings") or {"mode": "off"},
+}
+# Every change after the settings the run was created with — version 1 — is
+# replayed at the cycle it took effect from and with the version it had. Not
+# simply every change after the first recorded: an edit made before the first
+# cycle is the first recorded, and version 1 never took effect at all.
+changes = [c for c in (record or {}).get("changes", []) if c["version"] > 1]
+if changes:
+    body["intent_schedule"] = [
+        {"cycle": c["cycle"], "settings": c["settings"], "version": c["version"], "source": c["source"]}
+        for c in changes
+    ]
+json.dump(body, open(f"{sys.argv[2]}/run.json", "w"))
 PY
 curl -sf "$API/api/mines" -H 'Content-Type: application/json' --data-binary @"$WORK/mine.json" >/dev/null
 curl -sf "$API/api/scenarios" -H 'Content-Type: application/json' --data-binary @"$WORK/scenario.json" >/dev/null
