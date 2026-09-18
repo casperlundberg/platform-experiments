@@ -61,6 +61,10 @@ mapped onto the levels its own scheduler used.
 - **Arrival is event-driven, not timer-driven.** In the real pipeline
   `associate` is a timer job every 10 s; here every job belongs to an event.
   The counts match; the mechanism does not.
+  [`workflow-inference.md`](workflow-inference.md) measures that mechanism, and
+  explains why its ~27 candidate events an hour and this mine's 91 are both
+  right: 91 is a job-count parameter, because simlab derives picks from events
+  and production does not.
 - **Nothing about deadlines or queueing** comes from the extract, because it
   contains neither.
 
