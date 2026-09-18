@@ -111,6 +111,15 @@
           }
         },
         {
+          "label": "decay to its own level",
+          "intent": {
+            "burst_exempt": [
+              "restored"
+            ],
+            "decay_to": -1
+          }
+        },
+        {
           "label": "both, exempt",
           "intent": {
             "mode": "both",
