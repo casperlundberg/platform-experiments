@@ -1,0 +1,25 @@
+{
+  "recorded_at": "2026-09-18T05:44:54+00:00",
+  "command": "make -C platform-experiments sweep S=scenario-shapes",
+  "simlab_api": {
+    "version": "2.0.1",
+    "commit": "b47790adfee0f1aab140e881c201566b977612b8",
+    "modified": false,
+    "go_version": "go1.26.7",
+    "platform": "linux/amd64"
+  },
+  "autoscaler": {
+    "version": "1.1.0",
+    "commit": "14f2ca0f570b0fe3d39f2a7f27ec4d1000843a54",
+    "modified": false,
+    "go_version": "go1.26.7",
+    "platform": "linux/amd64"
+  },
+  "platform_experiments": {
+    "commit": "3eb4eaf9f448b6b43fad73eaf56b208acc55592e",
+    "modified": false
+  },
+  "runs": 48,
+  "wall_seconds": 736,
+  "runs_csv_sha256": "706af6b688c8ac4a9a0b61bca56871097e611b3d51fdceb5a593e895fc2a591b"
+}

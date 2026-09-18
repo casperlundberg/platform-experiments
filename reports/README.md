@@ -5,11 +5,18 @@ command that regenerates it, and a digest of its per-run results; at the same
 commits every number comes out the same. `sweeps/NAME.md` is the reading and
 `sweeps/NAME.json` the definition.
 
-All eight were produced on 2026-09-17 by **autoscaler 1.1.0** (`14f2ca0`) and
-**simlab-api 2.0.0** (`ddaa206`), built from clean checkouts, measured by
-platform-experiments `152bad5` — 540 runs of one two-hour scenario with one
-large rock burst, on six seeds, against 12 on-premise and (unless varied) 60
-cloud executors.
+Eight of the nine were produced on 2026-09-17 by **autoscaler 1.1.0**
+(`14f2ca0`) and **simlab-api 2.0.0** (`ddaa206`), built from clean checkouts,
+measured by platform-experiments `152bad5` — 540 runs of one two-hour scenario
+with one large rock burst, on six seeds, against 12 on-premise and (unless
+varied) 60 cloud executors.
+
+[scenario-shapes](scenario-shapes/report.md) came later, on **simlab-api 2.0.1**
+(`b47790a`): 48 runs of three 24-hour days on a mine fitted to an operational
+catalogue — a workday, a rock burst and a medium earthquake — on four seeds.
+Its mine and day are the ones [`docs/calibration.md`](../docs/calibration.md)
+describes, and it is the sweep to read first: the earlier eight all sit on one
+two-hour shape.
 
 | Report | Question | What it found |
 |---|---|---|
@@ -21,9 +28,13 @@ cloud executors.
 | [mid-run-switch](mid-run-switch/report.md) | What does changing intent mid-run do? | Intent's effect is in the burst: on at the burst equals on throughout, off at the burst equals never. Promotion's cost persists after it is switched off. |
 | [promotion](promotion/report.md) | Can promotion keep its benefit without its cost? | Not as tested. Restarting the deadline removes its extra breaches but not its cloud time; very-high ground motion never occurs at these magnitudes; promoting less high changes little. |
 | [workforce](workforce/report.md) | How does crew size change intent's value? | More people protect more of the mine: decay saves fewer breaches (−28 % → −17 %) and misses about one exposing event in ten. |
+| [scenario-shapes](scenario-shapes/report.md) | Does intent pay on a real day's workload, and on a day with a medium earthquake? | Its value follows contention: on a quiet workday decay is a net cost (49 → 1,161 breaches), under the earthquake it cuts breaches by a quarter and halves the wait for a location on events that exposed someone. And decayed work needs a level of its own — sharing one with submitted work made those events finish *later* than with no intent. |
 
 ## Threads worth pulling
 
+- **Switching intent on by contention rather than by hand.** It pays under a
+  burst or an earthquake and costs on a quiet day; the platform can already be
+  told mid-run, but nothing decides it (scenario-shapes, mid-run-switch).
 - An allowance for location error taken from each location's own uncertainty,
   rather than one number (pick-jitter).
 - Promotion that raises only the next picks an event needs, rather than all its
@@ -31,5 +42,9 @@ cloud executors.
 - A measure of the value of restoring decayed work for someone who arrives after
   an event, which exposure judged at the moment of the event cannot see
   (intent-modes).
-- More scenario shapes than one burst in two hours, and more exposing events at
-  high ground motion: two in 129 here.
+- More scenario shapes still: the calibrated days are one mine, one workforce
+  and one array, and very high ground motion reaches only one or two events a
+  day even under a Nuttli 4 main shock.
+- Re-running the eight two-hour sweeps on the calibrated day, now that one
+  exists: their job mix never submitted work at the floor, which is what hid the
+  decay-level collision.
