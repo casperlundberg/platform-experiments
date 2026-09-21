@@ -57,12 +57,15 @@ harness::expect() {
 }
 
 # harness::finish is the experiment's exit status: non-zero if anything failed.
+# The verdict names the builds it is about, when the stack was started here.
 harness::finish() {
+  local on=""
+  [[ -n "${VERSIONS:-}" ]] && on=" On $VERSIONS."
   if [[ "$FAILURES" -gt 0 ]]; then
-    printf '\n\033[31m%d check(s) failed.\033[0m\n' "$FAILURES"
+    printf '\n\033[31m%d check(s) failed.\033[0m%s\n' "$FAILURES" "$on"
     exit 1
   fi
-  printf '\n\033[32mAll checks passed.\033[0m\n'
+  printf '\n\033[32mAll checks passed.\033[0m%s\n' "$on"
 }
 
 # ----------------------------------------------------------------- lifecycle
@@ -159,6 +162,27 @@ harness::start() {
   harness::start_autoscaler
   harness::start_simlab
   harness::ok "autoscaler on :$AUTOSCALER_PORT, simlab-api on :$SIMLAB_PORT"
+  VERSIONS="$(harness::versions)"
+  harness::ok "$VERSIONS"
+}
+
+# harness::versions names the three builds an experiment's evidence comes from:
+# each service as it reports itself, and this repository as its version script
+# has it. A verdict that names no version says nothing about which change it
+# held for, or which one broke it.
+harness::versions() {
+  local ours
+  ours="$("$EXPERIMENTS_DIR/scripts/version.sh" "$EXPERIMENTS_DIR" 2>/dev/null || echo unknown)"
+  curl -sf "$API/api/version" | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+def name(b):
+    if not b:
+        return "unknown"
+    flag = ", modified" if b.get("modified") else ""
+    return "%s (%s%s)" % (b.get("version") or "unversioned", b["commit"][:12], flag)
+print("autoscaler %s, simlab-api %s, platform-experiments %s"
+      % (name(d.get("autoscaler")), name(d.get("simlab_api")), sys.argv[1]))' "$ours"
 }
 
 # harness::as authenticates a call to the autoscaler directly.

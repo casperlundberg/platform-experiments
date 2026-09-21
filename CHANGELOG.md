@@ -33,5 +33,7 @@ do the services'.
   and of this repository that produced it.
 - Briefs rendered to PDF from the reports (`make pdf`), naming this
   repository's version and commit on every page.
+- An experiment names the builds it ran on — each service's version and commit,
+  and this repository's version — when it starts and on its verdict.
 - `make version`, `make check` and `make release`, with the service
   repositories' version and release scripts; releases are cut from `master`.
