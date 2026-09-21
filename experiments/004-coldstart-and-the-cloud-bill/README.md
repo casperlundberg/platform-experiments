@@ -72,7 +72,7 @@ everything" would be unmistakable, and coldstarts an operator would recognise
 **No defect found in the running system**, once the engine modelled the ramp.
 
 ```
-✓ asked for 2 executors, not the 220 its caps allow
+✓ asked for 4 executors, not the 220 its caps allow
 ✓ the reasoning says the breach was unavoidable
 ✓ and it names coldstart as the reason
 ✓ the projection still reports the breach
@@ -82,6 +82,10 @@ everything" would be unmistakable, and coldstarts an operator would recognise
 ✓ capacity that cannot work yet is reported as starting, not as throughput
 ✓ and it says how much: all 1 of them
 ```
+
+Four since autoscaler 2.0.0, which sizes an unavoidable breach for the queue
+as it will be once capacity has started — the backlog that builds during the
+coldstart included — rather than the queue as it stood; 1.x asked for two.
 
 It did find one thing, on its first run: the unavoidable branch of the
 reasoning did not say how much capacity was already starting. It reported

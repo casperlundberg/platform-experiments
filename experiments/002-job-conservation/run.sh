@@ -37,7 +37,7 @@ run_one() {
 harness::log "Replaying it under three policies"
 
 declare -A RUNS
-RUNS[tight]=$(run_one "Tight caps" '{"local_executor_cap": 6, "cloud_executor_cap": 6, "scale_down_cooldown_seconds": 0, "max_scale_down_step": 50}')
+RUNS[tight]=$(run_one "Tight caps" '{"local_executor_cap": 6, "cloud_executor_cap": 6, "local_scale_down_window_seconds": 0, "cloud_scale_down_window_seconds": 0}')
 RUNS[generous]=$(run_one "Generous caps" '{"local_executor_cap": 40, "cloud_executor_cap": 80}')
 RUNS[local-only]=$(run_one "On-premise only" '{"local_executor_cap": 20, "cloud_executor_cap": 0}')
 

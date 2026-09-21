@@ -142,7 +142,7 @@ harness::note "reason: $(reason)"
 # during a ramp actually looks like.
 #
 # This gets its own target. Doing it on the one above would inherit the
-# overload's fleet and the scale-down step limit that follows it, and a check
+# overload's fleet and the scale-down window that follows it, and a check
 # whose setup is three sections of history is a check nobody can read.
 
 harness::log "A second target, so the fleet has a history of exactly one cycle"
