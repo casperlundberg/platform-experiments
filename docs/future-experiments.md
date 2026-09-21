@@ -155,6 +155,23 @@ clear fallen rock) in that order.
 - **Evidence to fuse:** ThingWave's instrumented rock bolts report strain and
   breakage where the seismic system sees shaking — two independent signals of
   the same damage.
+- **The threshold is per drift, not one number** (checked 2026-09-21). The
+  Canadian Rockburst Support Handbook (Kaiser et al. 1996, §8.2.4, Eqn 8.5a)
+  gives the ppv that triggers a seismically induced fall from the back:
+  ppv_T = g / (2πf) · (m_d · SF_s − 1), with SF_s the block's static strength
+  factor before the event (≥ 1), m_d the dynamic strength multiplier (1.1–1.4
+  for steel) and f the dominant frequency (10–30 Hz is critical for typical
+  drifts; 20–30 Hz fits Hedley's 1992 ppv–ppa data, §8.2.1). At 25 Hz and
+  m_d 1.2, a marginal block (SF_s 1.0) falls at about 0.013 m/s and a sound one
+  (SF_s 2.0) at about 0.09 m/s — the moderate-to-high band the hazard levels
+  already use. So: a seeded SF_s per drift segment, lower where the ground is
+  highly jointed (Table 3.1 expects shaking-induced falls in ground below peak
+  strength only if it is highly jointed). That a shaken segment's SF_s drops
+  until it is scaled is an assumption to state and sweep, not a finding.
+  Minor damage is a skin under 0.25 m (< 7 kN/m², Table 2.1) that standard
+  support retains — what a scaler clears. Bauer and Calder's (1978)
+  blast-damage limits (no fracturing of intact rock below 0.254 m/s, minor
+  slabbing to 0.635 m/s) are widely cited, but only seen in secondary sources.
 
 ### Case 7 — re-entry after a blast, by robot first
 
@@ -184,6 +201,16 @@ picture allows, and get that picture faster than a baseline would.
 - **Baseline:** each person's pre-assigned chamber and route.
 - **Relates to:** case 4, of which this is the version with shelters rather
   than exits, and capacity per shelter.
+- **The escape budget** (checked 2026-09-21). Western Australia's refuge
+  chamber guideline (Department of Mines and Petroleum 2013, §5.2) sizes the
+  farthest a worker should be from a refuge by what they can walk at a
+  moderate pace on half a self-rescuer's nominal duration: with 30-minute
+  units, no more than 750 m — 50 m a minute, 0.83 m/s, and "considerably
+  reduced" by gradient, ladderways, heat and smoke. So a 15-minute walking
+  budget as a parameter, at a pace a little under the simulator's 1 m/s, and
+  chambers that hold their occupants for 36 hours. The guideline is written
+  for fire and gas; the same chambers are where people go after a large event.
+  Case 4 uses the same budget to the nearest exit.
 
 ### Case 9 — silent sensors and tags
 
@@ -207,6 +234,16 @@ after it, a maintenance ticket anywhere else.
   background failure rate for the silences that are nobody's fault.
 - **A "no" looks like:** devices failing for other reasons far more often than
   from shaking, so silence near an event says little more than a timeout does.
+- **How devices are lost** (checked 2026-09-21). No fragility curve for in-mine
+  devices against shaking turned up. What the sources support: geophones clip
+  at ground displacements above a few millimetres, so a nearby large event
+  costs picks before it costs devices (IMS, on geophones and accelerometers);
+  and a device fixed to the rock goes when the rock does — at moderate damage
+  many holding elements fail, at major damage the drift may be closed
+  (Kaiser et al. 1996, §2.4). So a device is lost when its drift segment has a
+  fall of moderate or major severity (case 6's relation), a geophone clips
+  within reach of a large event, and anything can fail at the background rate.
+  This is an assumption built from those sources, and should be swept.
 
 ### Case 10 — protecting machines as well as people
 
@@ -250,6 +287,17 @@ located, could release quiet areas sooner and hold active ones longer.
   follow-up below — readiness for the burst an area is likely to produce.
 - **A "no" looks like:** forecasts too uncertain at the scale of one heading to
   release anything sooner than the fixed wait, safely.
+
+### Sources checked for wave B
+
+- Kaiser, P.K., McCreath, D.R. and Tannant, D.D. (1996). *Canadian Rockburst
+  Support Handbook*. Geomechanics Research Centre, Laurentian University.
+  <https://www.geo-kaiser.ca/www.geo-kaiser.ca/wp-content/uploads/Publications/CRBSHB%201996%20Kaiser%20et%20al.pdf>
+- Department of Mines and Petroleum (2013). *Refuge chambers in underground
+  mines — guideline*. Resources Safety, Western Australia.
+  <https://www.worksafe.wa.gov.au/system/files/documents/2025-02/MSH_G_RefugeChambersUGmines.pdf>
+- Institute of Mine Seismology, *Seismic sensors: geophones and
+  accelerometers*. <https://www.imseismology.org/sensors/>
 
 ### Considered, not taken up
 
