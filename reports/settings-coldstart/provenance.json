@@ -1,0 +1,26 @@
+{
+  "recorded_at": "2026-09-21T16:29:54+00:00",
+  "command": "make -C platform-experiments sweep S=settings-coldstart",
+  "simlab_api": {
+    "version": "3.0.0",
+    "commit": "1dcaed0addff6f0a22fd5142744c6bcaad9e548c",
+    "modified": false,
+    "go_version": "go1.26.7",
+    "platform": "linux/amd64"
+  },
+  "autoscaler": {
+    "version": "2.0.0-dev.3+1bbd547",
+    "commit": "1bbd5472a9db30be3757af45b4368d216d720c3b",
+    "modified": false,
+    "go_version": "go1.26.7",
+    "platform": "linux/amd64"
+  },
+  "platform_experiments": {
+    "version": "1.0.0-dev.22+024b6e7",
+    "commit": "024b6e7d5aa2d6f291cbaf0057f9398c42b47066",
+    "modified": false
+  },
+  "runs": 108,
+  "wall_seconds": 1287,
+  "runs_csv_sha256": "a414d40dbafad7f7c9949a53632ef8cb37be271da267fceb068cbc75af7a1d37"
+}
