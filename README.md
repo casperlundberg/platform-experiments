@@ -48,6 +48,8 @@ findings/        write-ups of what was found, one per defect
 lib/harness.sh   builds and starts the stack; shared assertions
 lib/reproduce.sh rebuilds a recorded run's code and replays it (make reproduce)
 lib/results.py   fetches a run's results and compares two runs field by field
+lib/pdf/         renders a brief to PDF (make pdf)
+briefs/          written syntheses across reports, the source of each PDF
 ```
 
 Experiments are numbered in the order they were written and are not renumbered,
@@ -133,6 +135,24 @@ labels on the rest — intent against no intent at the same cloud cap, say.
 One mine and one day in them are fitted to a real pipeline's records rather than
 chosen: [`docs/calibration.md`](docs/calibration.md) says how, in aggregates.
 That extract lives outside every repository and stays there.
+
+## Briefs
+
+A report answers one sweep's question; a **brief** says what several of them,
+and the experiments, add up to — for someone who has not read them — as a PDF.
+
+```bash
+make pdf B=2026-09-21-findings   # → out/briefs/2026-09-21-findings.pdf
+make test-pdf                    # the renderer's tests
+```
+
+A brief's figures and tables are drawn from `reports/` as the sweeps wrote
+them, through the same aggregation that prints each report, never retyped; a
+report whose `runs.csv` no longer matches its recorded digest refuses to
+render. The PDF names the commit it was rendered from, and the same brief at
+the same commits renders to the same bytes. The renderer runs on pinned
+packages in a venv under `out/`, built on first use.
+[`briefs/README.md`](briefs/README.md) says how to write one.
 
 ## Writing one
 

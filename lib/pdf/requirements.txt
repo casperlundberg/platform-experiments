@@ -1,0 +1,22 @@
+# What a brief is rendered with, pinned along with everything each pulls in, so
+# the same commit renders the same PDF on another machine. `make pdf` installs
+# these into out/venv; nothing else in this repository needs them.
+#
+# matplotlib also supplies the fonts — STIX for text, DejaVu for code and
+# figures — so a render never depends on what a machine happens to have installed.
+charset-normalizer==3.5.1
+contourpy==1.4.0
+cycler==0.12.1
+fonttools==4.65.0
+kiwisolver==1.5.1
+markdown-it-py==4.2.0
+matplotlib==3.11.2
+mdurl==0.1.2
+numpy==2.5.3
+packaging==26.3
+pillow==12.3.0
+pyparsing==3.3.3
+python-dateutil==2.9.0.post0
+PyYAML==6.0.3
+reportlab==5.0.1
+six==1.17.0

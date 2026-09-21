@@ -347,6 +347,24 @@ def aggregate(rows, field):
     return statistics.fmean(values), min(values), max(values)
 
 
+def change(arm_rows, base_rows, field):
+    """The change in a measure summed over seeds, as a fraction of the reference's
+    total, pairing each run with the reference run on the same seed.
+
+    Totals rather than a mean of per-seed percentages, which a seed with a
+    handful of breaches would dominate. None when no seed pairs or the
+    reference total is zero. Briefs chart this same function, so a figure and
+    the report table it came from cannot disagree."""
+    ours = theirs = 0.0
+    paired = 0
+    for row in arm_rows:
+        ref = next((b for b in base_rows if b["seed"] == row["seed"]), None)
+        a, b = number(row[field]), number(ref[field]) if ref else None
+        if a is not None and b is not None:
+            ours, theirs, paired = ours + a, theirs + b, paired + 1
+    return (ours - theirs) / theirs if paired and theirs else None
+
+
 def cell(stats, places):
     if stats is None:
         return "–"
@@ -431,14 +449,8 @@ def write_report(out_dir, notes_path=None):
             deltas = []
             for field in ("sla_breaches", "sla_breaches_as_submitted", "cloud_hours", "ttl_exposing_mean_s",
                           "ttp_exposing_mean_s"):
-                ours = theirs = 0.0
-                paired = 0
-                for row in arm_rows:
-                    ref = next((b for b in base_rows if b["seed"] == row["seed"]), None)
-                    a, b = number(row[field]), number(ref[field]) if ref else None
-                    if a is not None and b is not None:
-                        ours, theirs, paired = ours + a, theirs + b, paired + 1
-                deltas.append(f"{(ours - theirs) / theirs * 100:+.0f} %" if paired and theirs else "–")
+                delta = change(arm_rows, base_rows, field)
+                deltas.append(f"{delta * 100:+.0f} %" if delta is not None else "–")
             lines.append(f"| {arm_name(labels)} | " + " | ".join(deltas) + " |")
         lines.append("")
 

@@ -53,6 +53,31 @@ sweeps: ## Run every sweep, in order
 report: ## Rewrite a sweep's report from what it recorded: make report S=intent-modes
 	python3 lib/sweep.py report reports/$(S)
 
+# Briefs render with pinned Python packages in a venv of their own, under out/
+# so it is never committed. It is rebuilt whenever the pins change.
+PDF_VENV := out/venv
+BRIEFS := $(filter-out README,$(basename $(notdir $(wildcard briefs/*.md))))
+
+$(PDF_VENV)/installed: lib/pdf/requirements.txt
+	rm -rf $(PDF_VENV)
+	python3 -m venv $(PDF_VENV)
+	$(PDF_VENV)/bin/pip install --quiet --disable-pip-version-check -r $<
+	@touch $@
+
+.PHONY: pdf
+pdf: $(PDF_VENV)/installed ## Render a brief to out/briefs/NAME.pdf: make pdf B=2026-09-21-findings
+	@[ -n "$(B)" ] || { echo "name the brief: make pdf B=name (one of: $(BRIEFS))"; exit 1; }
+	@[ -f "briefs/$(B).md" ] || { echo "no brief briefs/$(B).md (one of: $(BRIEFS))"; exit 1; }
+	$(PDF_VENV)/bin/python lib/pdf/build.py briefs/$(B).md out/briefs/$(B).pdf
+
+.PHONY: pdfs
+pdfs: $(PDF_VENV)/installed ## Render every brief
+	@for b in $(BRIEFS); do $(PDF_VENV)/bin/python lib/pdf/build.py briefs/$$b.md out/briefs/$$b.pdf || exit 1; done
+
+.PHONY: test-pdf
+test-pdf: $(PDF_VENV)/installed ## Test the brief renderer
+	cd lib/pdf && PYTHONDONTWRITEBYTECODE=1 ../../$(PDF_VENV)/bin/python -m unittest -v test_brief
+
 .PHONY: lint
 lint: ## shellcheck every script
 	shellcheck lib/harness.sh lib/reproduce.sh lib/sweep.sh experiments/*/run.sh
