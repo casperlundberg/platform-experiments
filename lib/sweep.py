@@ -148,6 +148,15 @@ def run_sweep(base, sweep_path, reports_dir, parallel=4):
             jobs.append((labels, contribution, seed, scenario_for(seed, contribution["scenario"])))
 
     started = time.time()
+    # This repository as it measures: taken before the first run, because a
+    # commit made while a sweep runs — a reading written, another report
+    # rendered — is not what produced it. Modified means the measuring code or
+    # a definition differs from the commit; a reading (sweeps/*.md) is merged
+    # into the report but cannot change a number, so it does not count.
+    here = os.path.dirname(os.path.abspath(__file__))
+    git = lambda *args: subprocess.run(["git", "-C", here, *args], capture_output=True, text=True).stdout.strip()
+    ours = {"version": own_version(), "commit": git("rev-parse", "HEAD"),
+            "modified": bool(git("status", "--porcelain", "--", "lib", ":(glob)sweeps/*.json"))}
     total = len(jobs)
     done = [0]
 
@@ -197,8 +206,6 @@ def run_sweep(base, sweep_path, reports_dir, parallel=4):
         f.write("\n")
 
     versions = call(base, "GET", "/api/version")
-    here = os.path.dirname(os.path.abspath(__file__))
-    git = lambda *args: subprocess.run(["git", "-C", here, *args], capture_output=True, text=True).stdout.strip()
     with open(os.path.join(out_dir, "runs.csv"), "rb") as f:
         digest = hashlib.sha256(f.read()).hexdigest()
     provenance = {
@@ -208,10 +215,8 @@ def run_sweep(base, sweep_path, reports_dir, parallel=4):
         "autoscaler": versions.get("autoscaler"),
         # The sweep definition and what is measured live here, so this
         # repository's version and commit are part of what produced the numbers
-        # too. Modified means the measuring code or the definitions differ from
-        # the commit; anything else in this repository cannot change a number.
-        "platform_experiments": {"version": own_version(), "commit": git("rev-parse", "HEAD"),
-                                 "modified": bool(git("status", "--porcelain", "--", "lib", "sweeps"))},
+        # too.
+        "platform_experiments": ours,
         "runs": total,
         "wall_seconds": round(time.time() - started),
         "runs_csv_sha256": digest,

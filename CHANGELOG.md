@@ -33,6 +33,9 @@ do the services'.
   and of this repository that produced it.
 - Briefs rendered to PDF from the reports (`make pdf`), naming this
   repository's version and commit on every page.
+- A sweep records this repository as it was when the sweep began, so a commit
+  made while it runs is not credited with it; a reading in `sweeps/*.md` no
+  longer marks a report modified.
 - An experiment names the builds it ran on — each service's version and commit,
   and this repository's version — when it starts and on its verdict.
 - `make version`, `make check` and `make release`, with the service
