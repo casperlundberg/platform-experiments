@@ -74,6 +74,10 @@ pdf: $(PDF_VENV)/installed ## Render a brief to out/briefs/NAME.pdf: make pdf B=
 pdfs: $(PDF_VENV)/installed ## Render every brief
 	@for b in $(BRIEFS); do $(PDF_VENV)/bin/python lib/pdf/build.py briefs/$$b.md out/briefs/$$b.pdf || exit 1; done
 
+.PHONY: test-sweep
+test-sweep: ## Test the sweep report
+	cd lib && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_sweep
+
 .PHONY: test-pdf
 test-pdf: $(PDF_VENV)/installed ## Test the brief renderer
 	cd lib/pdf && PYTHONDONTWRITEBYTECODE=1 ../../$(PDF_VENV)/bin/python -m unittest -v test_brief

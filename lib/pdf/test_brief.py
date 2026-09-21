@@ -22,7 +22,6 @@ from sources import ROOT, BriefError, Report, Reports, load_yaml, stamp  # noqa:
 import sweep  # noqa: E402,I100  (after sources, which puts lib/ on the path)
 
 REPORTS = sorted(os.path.dirname(p) for p in glob.glob(os.path.join(ROOT, "reports", "*", "sweep.json")))
-CHANGED = ("sla_breaches", "sla_breaches_as_submitted", "cloud_hours", "ttl_exposing_mean_s", "ttp_exposing_mean_s")
 
 
 def printed_table(report_md, heading_prefix):
@@ -57,7 +56,7 @@ class TestChartsQuoteTheirReports(unittest.TestCase):
                 if {**labels, **report.baseline} == labels:
                     continue
                 row = printed[sweep.arm_name(labels)]
-                for field, cell in zip(CHANGED, row):
+                for (field, _), cell in zip(sweep.compared(report.sweep), row):
                     value = report.change(labels, field)
                     self.assertEqual(f"{value * 100:+.0f} %" if value is not None else "–", cell,
                                      f"{report.path}, {sweep.arm_name(labels)}, {field}")
@@ -71,7 +70,7 @@ class TestChartsQuoteTheirReports(unittest.TestCase):
             printed = printed_table(report.text(), "Results")
             for labels, _ in sweep.combinations(report.sweep):
                 row = printed[sweep.arm_name(labels)]
-                for (field, _, places), cell in zip(sweep.HEADLINE, row):
+                for (field, _, places), cell in zip(sweep.headline(report.sweep), row):
                     self.assertEqual(sweep.cell(report.mean(labels, field), places), cell,
                                      f"{report.path}, {sweep.arm_name(labels)}, {field}")
                     compared += 1

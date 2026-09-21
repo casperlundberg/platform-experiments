@@ -10,6 +10,7 @@ command that produces the same numbers again.
 
     sweep.py run API SWEEP.json REPORTS_DIR [PARALLEL]
     sweep.py report REPORT_DIR          rewrite report.md from what was recorded
+    sweep.py ref SWEEP.json REPO        what the sweep builds REPO from
 
 Everything a run produces is deterministic in its commits and inputs, so
 regenerating a report at the same commits reproduces runs.csv byte for byte;
@@ -94,12 +95,29 @@ def arm_name(labels):
     return " · ".join(labels.values())
 
 
+BUILDS = ("autoscaler", "simlab-api")
+
+
+def build_ref(sweep, repo):
+    """What a sweep builds a service from: HEAD, unless the sweep pins it, as to
+    a release tag. A pin keeps a sweep off whatever else is committed locally —
+    work in progress that has not been released, someone else's included — and,
+    being in the definition, reruns with it."""
+    pins = sweep.get("build", {})
+    unknown = sorted(set(pins) - set(BUILDS))
+    if unknown:
+        raise ValueError(f"{sweep['name']}: build names {', '.join(unknown)}; a sweep builds {', '.join(BUILDS)}")
+    return pins.get(repo, "HEAD")
+
+
 # ------------------------------------------------------------------ running
 
 def run_sweep(base, sweep_path, reports_dir, parallel=4):
     with open(sweep_path) as f:
         sweep = json.load(f)
     name = sweep["name"]
+    # A column the report cannot show is refused now, not after every run.
+    headline(sweep), compared(sweep)
     out_dir = os.path.join(reports_dir, name)
     os.makedirs(out_dir, exist_ok=True)
 
@@ -289,22 +307,106 @@ def measure(base, run_id, interval):
 
 # ---------------------------------------------------------------- reporting
 
-# Columns of the main table: (field, heading, places).
-HEADLINE = [
-    ("sla_breaches", "Breaches", 0),
-    ("sla_breaches_as_submitted", "As submitted", 0),
-    ("cloud_hours", "Cloud h", 1),
-    ("drained_hours", "Drained h", 1),
-    ("overload_decisions", "Overloads", 0),
-    ("exposing_events", "Exposing events", 0),
-    ("ttl_exposing_mean_s", "Locate exposing, mean s", 0),
-    ("ttl_exposing_p95_s", "p95 s", 0),
-    ("ttp_exposing_mean_s", "Process exposing, mean s", 0),
-    ("ttl_all_mean_s", "Locate all, mean s", 0),
-    ("exposing_ever_decayed", "Exposing decayed", 0),
-    ("decayed_events", "Events decayed", 0),
+# Every column a report can show: field → (heading, decimal places).
+COLUMNS = {
+    "sla_breaches": ("Breaches", 0),
+    "sla_breaches_as_submitted": ("As submitted", 0),
+    "cloud_hours": ("Cloud h", 1),
+    "local_hours": ("Local h", 1),
+    "drained_hours": ("Drained h", 1),
+    "overload_decisions": ("Overloads", 0),
+    "mean_wait_s": ("Wait mean s", 0),
+    "p95_wait_s": ("Wait p95 s", 0),
+    "exposing_events": ("Exposing events", 0),
+    "ttl_exposing_mean_s": ("Locate exposing, mean s", 0),
+    "ttl_exposing_p95_s": ("p95 s", 0),
+    "ttp_exposing_mean_s": ("Process exposing, mean s", 0),
+    "ttl_all_mean_s": ("Locate all, mean s", 0),
+    "ttl_all_p95_s": ("Locate all, p95 s", 0),
+    "ttp_all_mean_s": ("Process all, mean s", 0),
+    "exposing_ever_decayed": ("Exposing decayed", 0),
+    "decayed_events": ("Events decayed", 0),
+}
+
+# What a sweep reports unless it names its own `columns` and `compare`: what
+# intent changes. A sweep of the autoscaler's own settings runs with intent off,
+# where half of these are zeros and "as submitted" repeats "breaches", so it
+# names the columns that settings move instead.
+INTENT_COLUMNS = [
+    "sla_breaches", "sla_breaches_as_submitted", "cloud_hours", "drained_hours", "overload_decisions",
+    "exposing_events", "ttl_exposing_mean_s", "ttl_exposing_p95_s", "ttp_exposing_mean_s", "ttl_all_mean_s",
+    "exposing_ever_decayed", "decayed_events",
+]
+INTENT_COMPARED = [
+    "sla_breaches", "sla_breaches_as_submitted", "cloud_hours", "ttl_exposing_mean_s", "ttp_exposing_mean_s",
 ]
 
+
+def named(sweep, key, default):
+    fields = sweep.get(key, default)
+    unknown = [f for f in fields if f not in COLUMNS]
+    if unknown:
+        raise ValueError(f"{sweep['name']}: {key} names {', '.join(unknown)}, which a report cannot show; "
+                         f"it can show {', '.join(COLUMNS)}")
+    return fields
+
+
+def headline(sweep):
+    """The results table's columns, as (field, heading, places)."""
+    return [(field, *COLUMNS[field]) for field in named(sweep, "columns", INTENT_COLUMNS)]
+
+
+def compared(sweep):
+    """The comparison table's columns, as (field, heading). A heading loses its
+    unit there, since what the table shows is a change in per cent."""
+    return [(field, COLUMNS[field][0].removesuffix(" s")) for field in named(sweep, "compare", INTENT_COMPARED)]
+
+
+# What each column means, for a sweep that names its columns.
+DEFINED = {
+    "sla_breaches": "**Breaches**: jobs that waited longer than the deadline of the level they were "
+                    "served at, measured from their deadline origin.",
+    "sla_breaches_as_submitted": "**As submitted**: against the level each job arrived at, from "
+                                 "arrival — what intent cost against the SLA the work was submitted under.",
+    "cloud_hours": "**Cloud h**: cloud executor-hours of ready capacity, the billed tier.",
+    "local_hours": "**Local h**: on-premise executor-hours of ready capacity — hardware the mine "
+                   "already owns, so these hours are not billed.",
+    "drained_hours": "**Drained h**: simulated hours until the queue was empty.",
+    "overload_decisions": "**Overloads**: decisions where no capacity within both caps avoided a "
+                          "predicted breach, so the autoscaler ran flat out.",
+    "mean_wait_s": "**Wait mean s**: seconds a job waited in the queue before an executor took it, "
+                   "over every job.",
+    "p95_wait_s": "**Wait p95 s**: the 95th percentile of the seconds a job waited in the queue "
+                  "before an executor took it.",
+    "exposing_events": "**Exposing events**: events that truly exposed someone to at least moderate "
+                       "ground motion when they happened (judged by the simulator from the truth).",
+    "ttl_exposing_mean_s": "**Locate exposing**: seconds from an event that truly exposed someone to at "
+                           "least moderate ground motion (judged by the simulator from the truth) to its "
+                           "first location.",
+    "ttl_exposing_p95_s": "**p95 s**: the 95th percentile of the seconds to locate an exposing event.",
+    "ttp_exposing_mean_s": "**Process exposing**: seconds from an exposing event to every one of its "
+                           "picks processed — its final location.",
+    "ttl_all_mean_s": "**Locate all, mean s**: seconds from an event to its first location, over "
+                      "every event.",
+    "ttl_all_p95_s": "**Locate all, p95 s**: the 95th percentile of the seconds from an event to its "
+                     "first location.",
+    "ttp_all_mean_s": "**Process all, mean s**: seconds from an event to its final location, over "
+                      "every event.",
+    "exposing_ever_decayed": "**Exposing decayed**: exposing events intent decayed at some point — "
+                             "the misses.",
+    "decayed_events": "**Events decayed**: events whose work intent decayed at some point.",
+}
+
+
+def definitions(sweep):
+    if "columns" not in sweep and "compare" not in sweep:
+        return DEFINITIONS
+    fields = list(dict.fromkeys(f for f, *_ in headline(sweep) + compared(sweep)))
+    return "".join(f"- {DEFINED[f]}\n" for f in fields) + \
+        "- Every figure is the mean over seeds, with the range across seeds beneath where\n  the seeds disagree.\n"
+
+
+# What an intent sweep's columns mean, worded together.
 DEFINITIONS = """\
 - **Breaches**: jobs that waited longer than the deadline of the level they were
   served at, measured from their deadline origin. **As submitted**: against the
@@ -419,11 +521,12 @@ def write_report(out_dir, notes_path=None):
     if notes:
         lines += [notes, ""]
 
-    lines += ["## Results", "", "| Arm | " + " | ".join(h for _, h, _ in HEADLINE) + " |",
-              "|---|" + "---:|" * len(HEADLINE)]
+    columns = headline(sweep)
+    lines += ["## Results", "", "| Arm | " + " | ".join(h for _, h, _ in columns) + " |",
+              "|---|" + "---:|" * len(columns)]
     for labels, arm_rows in arms:
         lines.append(f"| {arm_name(labels)} | " + " | ".join(
-            cell(aggregate(arm_rows, field), places) for field, _, places in HEADLINE) + " |")
+            cell(aggregate(arm_rows, field), places) for field, _, places in columns) + " |")
     lines.append("")
 
     # The baseline names some or all of the axes. Each arm is compared with the
@@ -438,7 +541,8 @@ def write_report(out_dir, notes_path=None):
                   "The change in each measure summed over seeds, against the reference arm on the same "
                   "seeds. Totals rather than a mean of per-seed percentages, which a seed with a handful "
                   "of breaches would dominate.", "",
-                  "| Arm | Breaches | As submitted | Cloud h | Locate exposing, mean | Process exposing, mean |", "|---|---:|---:|---:|---:|---:|"]
+                  "| Arm | " + " | ".join(h for _, h in compared(sweep)) + " |",
+                  "|---|" + "---:|" * len(compared(sweep))]
         for labels, arm_rows in arms:
             reference = {**labels, **baseline}
             if labels == reference:
@@ -447,15 +551,14 @@ def write_report(out_dir, notes_path=None):
             if not base_rows:
                 continue
             deltas = []
-            for field in ("sla_breaches", "sla_breaches_as_submitted", "cloud_hours", "ttl_exposing_mean_s",
-                          "ttp_exposing_mean_s"):
+            for field, _ in compared(sweep):
                 delta = change(arm_rows, base_rows, field)
                 deltas.append(f"{delta * 100:+.0f} %" if delta is not None else "–")
             lines.append(f"| {arm_name(labels)} | " + " | ".join(deltas) + " |")
         lines.append("")
 
     lines += [
-        "## What the columns mean", "", DEFINITIONS,
+        "## What the columns mean", "", definitions(sweep),
         "## Setup", "",
         f"Axes: {'; '.join(f'**{a['name']}** ({len(a['values'])})' for a in sweep['axes'])}. "
         "Each arm's own intent, settings and scenario changes are in `sweep.json`.",
@@ -481,5 +584,8 @@ if __name__ == "__main__":
         run_sweep(args[0], args[1], args[2], int(args[3]) if len(args) > 3 else 4)
     elif command == "report":
         write_report(args[0], args[1] if len(args) > 1 else None)
+    elif command == "ref":
+        with open(args[0]) as f:
+            print(build_ref(json.load(f), args[1]))
     else:
         sys.exit(f"unknown command {command}")

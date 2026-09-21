@@ -8,7 +8,9 @@
 # Both services are built from clean checkouts of each repository's HEAD, not
 # from the working tree, so every number in a report is tied to a commit and a
 # report can say truthfully which code produced it. Uncommitted changes are not
-# in a sweep; commit them first. SWEEP_PARALLEL runs that many at once (4).
+# in a sweep; commit them first. A sweep can pin a service to another commit,
+# a release tag say, with "build": {"simlab-api": "v3.0.0"} in its definition.
+# SWEEP_PARALLEL runs that many at once (4).
 #
 # Runs on its own ports, so it can run beside an experiment or a dev stack.
 set -euo pipefail
@@ -33,11 +35,17 @@ sweep::cleanup() {
 }
 trap sweep::cleanup EXIT
 
-harness::log "Building both services from their committed HEAD"
+harness::log "Building both services from their committed HEAD, or the commit the sweep pins"
 checkout() { # repo
-  local repo="$PLATFORM_DIR/$1" tree="$WORK/src/$1" commit
-  commit=$(git -C "$repo" rev-parse HEAD)
-  if [[ -n "$(git -C "$repo" status --porcelain --untracked-files=no)" ]]; then
+  local repo="$PLATFORM_DIR/$1" tree="$WORK/src/$1" ref commit
+  ref=$(python3 "$here/sweep.py" ref "$SWEEP" "$1")
+  if ! commit=$(git -C "$repo" rev-parse --verify --quiet "$ref^{commit}"); then
+    echo "$1 has no commit '$ref', which $(basename "$SWEEP") pins it to" >&2
+    return 1
+  fi
+  if [[ "$ref" != HEAD ]]; then
+    harness::note "$1 pinned to $ref (${commit:0:12})" >&2
+  elif [[ -n "$(git -C "$repo" status --porcelain --untracked-files=no)" ]]; then
     harness::note "$1 has uncommitted changes; they are not in this sweep" >&2
   fi
   git -C "$repo" worktree add -q --detach "$tree" "$commit" >&2
