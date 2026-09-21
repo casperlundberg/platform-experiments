@@ -567,6 +567,11 @@ class Builder:
             commit, width = mono(b["commit"][:12])
             return (f"{escape(version)} {commit}{flag}", width + stringWidth(f"{version} {flag}", "Serif", 8.5))
 
+        def measured(ours):
+            # A report recorded before this repository had versions shows its
+            # commit alone.
+            return build(ours) if ours.get("version") else mono(ours.get("commit", "")[:12])
+
         header = [{"markup": h, "plain": h, "align": a, "bold": True} for h, a in (
             ("Report", "left"), ("Runs", "right"), ("autoscaler", "left"), ("simlab-api", "left"),
             ("Measured by", "left"), ("runs.csv SHA-256", "left"))]
@@ -575,7 +580,7 @@ class Builder:
             p = report.provenance
             runs = str(p.get("runs", len(report.rows)))
             values = [mono(report.name), (runs, None), build(p.get("autoscaler")), build(p.get("simlab_api")),
-                      mono((p.get("platform_experiments") or {}).get("commit", "")[:12]),
+                      measured(p.get("platform_experiments") or {}),
                       mono(p.get("runs_csv_sha256", "")[:12] + "…")]
             rows.append([{"markup": m, "plain": re.sub(r"<[^>]+>", "", m), "width": w, "align": header[j]["align"],
                           "bold": False} for j, (m, w) in enumerate(values)])
@@ -614,7 +619,7 @@ def directive_spec(node, where):
 def stamp_sentence(st):
     if not st["commit"]:
         return "Rendered outside a git checkout, so no commit ties this document to its inputs."
-    head = f"Rendered from platform-experiments {st['commit'][:12]}"
+    head = f"Rendered by platform-experiments {st['version']} ({st['commit'][:12]})"
     if st["modified"]:
         return f"{head}, with uncommitted changes to its inputs: {', '.join(st['modified'])}."
     return f"{head}; its brief, the reports it draws on and the renderer are all committed there."
@@ -703,7 +708,8 @@ class Document(BaseDocTemplate):
         super().__init__(
             path, pagesize=PAGE, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=24 * mm, bottomMargin=20 * mm,
             title=str(meta["title"]), author=str(meta.get("author", "")), subject=str(meta.get("subtitle", "")),
-            creator="platform-experiments lib/pdf", keywords=f"platform-experiments {st['commit'][:12]}",
+            creator="platform-experiments lib/pdf",
+            keywords=f"platform-experiments {st['version']} {st['commit'][:12]}",
             invariant=1)
         frame = Frame(self.leftMargin, self.bottomMargin, self.width, self.height, id="body",
                       leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
@@ -734,7 +740,7 @@ def render(brief, out):
     st = stamp(inputs)
 
     header = (str(meta.get("header") or meta["title"]), str(meta.get("date", "")))
-    footer = f"platform-experiments {st['commit'][:12]}" + (" · modified" if st["modified"] else "") \
+    footer = f"platform-experiments {st['version']} · {st['commit'][:12]}" + (" · modified" if st["modified"] else "") \
         if st["commit"] else "not in a git checkout"
 
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)

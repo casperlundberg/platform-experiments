@@ -102,6 +102,32 @@ class TestColumns(unittest.TestCase):
             self.assertIn(field, sweep.DEFINED)
 
 
+class TestVersion(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir)
+
+    def test_a_report_names_the_version_of_this_repository_that_measured_it(self):
+        recorded(self.dir, definition())
+        path = os.path.join(self.dir, "provenance.json")
+        with open(path) as f:
+            provenance = json.load(f)
+        provenance["platform_experiments"] = {"version": "1.2.0-dev.3+abc1234", "commit": "abc1234" + "0" * 33,
+                                              "modified": True}
+        with open(path, "w") as f:
+            json.dump(provenance, f)
+        sweep.write_report(self.dir, notes_path=os.path.join(self.dir, "no-notes.md"))
+        with open(os.path.join(self.dir, "report.md")) as f:
+            self.assertIn("measured by platform-experiments 1.2.0-dev.3+abc1234 (`abc123400000`, modified).",
+                          f.read())
+
+    def test_this_repository_has_a_semantic_version_that_says_nothing_of_files_no_number_depends_on(self):
+        # This checkout may well have local changes; what could move a number
+        # is recorded as `modified`, beside the version rather than inside it.
+        version = sweep.own_version()
+        self.assertRegex(version, r"^\d+\.\d+\.\d+(-dev\.\d+\+[0-9a-f]{7})?$")
+
+
 class TestBuilds(unittest.TestCase):
     def test_a_service_a_sweep_does_not_pin_is_built_from_head(self):
         self.assertEqual(sweep.build_ref(definition(build={"simlab-api": "v3.0.0"}), "autoscaler"), "HEAD")

@@ -154,6 +154,21 @@ the same commits renders to the same bytes. The renderer runs on pinned
 packages in a venv under `out/`, built on first use.
 [`briefs/README.md`](briefs/README.md) says how to write one.
 
+## Versions
+
+Releases are [semantic versions](https://semver.org), tagged `vMAJOR.MINOR.PATCH`
+and cut from `master` with `make release VERSION=1.1.0`, which refuses a dirty
+tree, a version not above the last, a `CHANGELOG.md` with no section for it and
+failing `make check`. Between releases a build is a pre-release of the version
+the changelog's unreleased section names — `1.0.0-dev.N+<commit>` — and
+`make version` prints it. [`CHANGELOG.md`](CHANGELOG.md) says what each part of
+a version promises here: MAJOR when a recorded number could come out
+differently for the same definition on the same services.
+
+Every report and every brief names the version and commit of each service that
+ran and of this repository, which measured. A breaking change anywhere shows as
+a MAJOR number on the results it touched.
+
 ## Writing one
 
 Start from the question, not the code. An experiment that cannot say what it

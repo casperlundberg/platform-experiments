@@ -16,7 +16,7 @@ import unittest
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from render import render  # noqa: E402
+from render import render, stamp_sentence  # noqa: E402
 from sources import ROOT, BriefError, Report, Reports, load_yaml, stamp  # noqa: E402
 
 import sweep  # noqa: E402,I100  (after sources, which puts lib/ on the path)
@@ -128,6 +128,11 @@ class TestRendering(unittest.TestCase):
 
     def test_off_is_an_arm_not_a_boolean(self):
         self.assertEqual(load_yaml("where: {intent: off}\nrange: false"), {"where": {"intent": "off"}, "range": False})
+
+    def test_a_brief_names_the_version_of_this_repository_it_was_rendered_by(self):
+        st = stamp([brief(self.dir, "text")])
+        self.assertEqual(st["version"], sweep.own_version())
+        self.assertIn(f"platform-experiments {st['version']} (", stamp_sentence(st))
 
     def test_an_input_outside_the_repository_always_counts_as_uncommitted(self):
         outside = brief(self.dir, "text")

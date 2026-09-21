@@ -157,7 +157,8 @@ def git(*args):
 
 
 def stamp(inputs):
-    """The commit a brief was rendered from, and which of its inputs differ from it.
+    """The version and commit a brief was rendered from, and which of its inputs
+    differ from the commit.
 
     Only the brief's own inputs are asked about, so an unrelated local change
     elsewhere in the tree does not mark every render as modified. An input
@@ -168,4 +169,5 @@ def stamp(inputs):
     outside = [p for p in paths if not (p == ROOT or p.startswith(ROOT + os.sep))]
     status = git("status", "--porcelain", "--", *inside) if commit and inside else ""
     modified = {line[3:].strip() for line in status.splitlines() if line.strip()}
-    return {"commit": commit, "modified": sorted(modified) + outside}
+    return {"version": sweep.own_version() if commit else "", "commit": commit,
+            "modified": sorted(modified) + outside}

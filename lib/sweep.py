@@ -207,10 +207,10 @@ def run_sweep(base, sweep_path, reports_dir, parallel=4):
         "simlab_api": versions.get("simlab_api"),
         "autoscaler": versions.get("autoscaler"),
         # The sweep definition and what is measured live here, so this
-        # repository's commit is part of what produced the numbers too.
-        # Modified means the measuring code or the definitions differ from the
-        # commit; anything else in this repository cannot change a number.
-        "platform_experiments": {"commit": git("rev-parse", "HEAD"),
+        # repository's version and commit are part of what produced the numbers
+        # too. Modified means the measuring code or the definitions differ from
+        # the commit; anything else in this repository cannot change a number.
+        "platform_experiments": {"version": own_version(), "commit": git("rev-parse", "HEAD"),
                                  "modified": bool(git("status", "--porcelain", "--", "lib", "sweeps"))},
         "runs": total,
         "wall_seconds": round(time.time() - started),
@@ -477,6 +477,34 @@ def cell(stats, places):
     return f"{fmt(mean)}<br><sub>{fmt(low)}–{fmt(high)}</sub>"
 
 
+def measured_by(ours):
+    """This repository's part in a report's provenance. A report recorded
+    before this repository had versions names its commit alone, as it did."""
+    commit = f"`{ours.get('commit', '')[:12]}`"
+    modified = ", modified" if ours.get("modified") else ""
+    if ours.get("version"):
+        return f"{ours['version']} ({commit}{modified})"
+    return commit + modified
+
+
+def own_version():
+    """This repository's semantic version, as of its commit.
+
+    scripts/version.sh marks any uncommitted change as .dirty, down to a local
+    .gitignore that no number depends on. What could move a number — the
+    measuring code and the sweep definitions — is recorded as `modified`
+    beside the version, so the mark is dropped here rather than stamped on
+    every report made from a checkout with an unrelated edit."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    result = subprocess.run([os.path.join(root, "scripts", "version.sh"), root], capture_output=True, text=True)
+    if result.returncode != 0:
+        return ""
+    version = result.stdout.strip().removesuffix(".dirty")
+    # On a release tag the script adds the commit only to say it is dirty.
+    core, _, build = version.partition("+")
+    return core if build and "-" not in core else version
+
+
 def write_report(out_dir, notes_path=None):
     with open(os.path.join(out_dir, "sweep.json")) as f:
         sweep = json.load(f)
@@ -505,8 +533,7 @@ def write_report(out_dir, notes_path=None):
         f"({', '.join(str(s) for s in sweep['seeds'])}). Produced {provenance['recorded_at']} "
         f"by autoscaler {build(provenance['autoscaler'])} and simlab-api {build(provenance['simlab_api'])}, "
         f"built from clean checkouts of those commits, measured by platform-experiments "
-        f"`{provenance.get('platform_experiments', {}).get('commit', '')[:12]}`"
-        f"{', modified' if provenance.get('platform_experiments', {}).get('modified') else ''}.",
+        f"{measured_by(provenance.get('platform_experiments', {}))}.",
         "",
         "Regenerate with:",
         "",

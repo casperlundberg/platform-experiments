@@ -74,6 +74,22 @@ pdf: $(PDF_VENV)/installed ## Render a brief to out/briefs/NAME.pdf: make pdf B=
 pdfs: $(PDF_VENV)/installed ## Render every brief
 	@for b in $(BRIEFS); do $(PDF_VENV)/bin/python lib/pdf/build.py briefs/$$b.md out/briefs/$$b.pdf || exit 1; done
 
+.PHONY: version
+version: ## Print this checkout's semantic version
+	@scripts/version.sh
+
+.PHONY: scripts-test
+scripts-test: ## Test the version and release scripts against real repositories
+	scripts/version_test.sh
+	scripts/release_test.sh
+
+.PHONY: check
+check: scripts-test test-sweep test-pdf ## What a release must pass
+
+.PHONY: release
+release: ## Tag and push a release: make release VERSION=1.1.0
+	RELEASE_BRANCH=master RELEASE_CHECK="make check" scripts/release.sh $(VERSION)
+
 .PHONY: test-sweep
 test-sweep: ## Test the sweep report
 	cd lib && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_sweep
@@ -84,4 +100,4 @@ test-pdf: $(PDF_VENV)/installed ## Test the brief renderer
 
 .PHONY: lint
 lint: ## shellcheck every script
-	shellcheck lib/harness.sh lib/reproduce.sh lib/sweep.sh experiments/*/run.sh
+	shellcheck lib/harness.sh lib/reproduce.sh lib/sweep.sh scripts/*.sh experiments/*/run.sh
