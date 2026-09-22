@@ -4,7 +4,7 @@
   "question": "Does decay get the information a mine's tactical decisions need to them in time — turning a unit back before it enters an event's zone, leading one out of it, rerouting before the last junction — more often than no intent, and how close does it come to the oracle?",
   "build": {
     "autoscaler": "v2.0.0",
-    "simlab-api": "1a0eab5"
+    "simlab-api": "25e3eb8"
   },
   "mine": {
     "id": "workday",
@@ -150,14 +150,35 @@
       "params": {}
     },
     {
+      "label": "turn-back warned",
+      "kind": "turn-back",
+      "params": {
+        "need": "warning"
+      }
+    },
+    {
       "label": "way-out",
       "kind": "way-out",
       "params": {}
     },
     {
+      "label": "way-out warned",
+      "kind": "way-out",
+      "params": {
+        "need": "warning"
+      }
+    },
+    {
       "label": "reroute",
       "kind": "reroute",
       "params": {}
+    },
+    {
+      "label": "reroute warned",
+      "kind": "reroute",
+      "params": {
+        "need": "warning"
+      }
     },
     {
       "label": "machines",
@@ -174,10 +195,13 @@
     "cloud_hours",
     "turn-back.decisions",
     "turn-back.in_time_share",
+    "turn-back warned.in_time_share",
     "turn-back.latency_p50_s",
     "way-out.decisions",
     "way-out.in_time_share",
+    "way-out warned.in_time_share",
     "reroute.in_time_share",
+    "reroute warned.in_time_share",
     "reroute.unwinnable",
     "machines.in_time_share"
   ],
@@ -185,9 +209,12 @@
     "sla_breaches",
     "cloud_hours",
     "turn-back.in_time_share",
+    "turn-back warned.in_time_share",
     "turn-back.latency_p50_s",
     "way-out.in_time_share",
+    "way-out warned.in_time_share",
     "reroute.in_time_share",
+    "reroute warned.in_time_share",
     "machines.in_time_share"
   ]
 }
