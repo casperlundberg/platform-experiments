@@ -27,6 +27,12 @@ MINOR: sweeps added; every number already recorded is as it was.
   1.0.1-dev.1: they began before this section existed, so the label says
   patch where this says minor.
 - Experiment 005 names its builds on its verdict, as the others do.
+- A sweep can score every run for use cases (`"use_cases": [{"label", "kind",
+  "params"}]`), recording each case's summary — decisions, share in time, never
+  had it, unwinnable, latency and slack — under its label, as columns a report
+  can show and compare. A sweep that scores none records what it always did.
+- `use-cases-decay`: decay against the decisions it is for, on the calibrated
+  days.
 
 ## 1.0.0 — 2026-09-22
 

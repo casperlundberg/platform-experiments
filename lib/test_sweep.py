@@ -32,7 +32,9 @@ def recorded(directory, definition):
         for seed in definition["seeds"]:
             row = {field: 10 * seed for field in sweep.METRICS}
             rows.append({**row, **labels, "seed": seed})
-    fields = [a["name"] for a in definition["axes"]] + ["seed"] + sweep.METRICS
+    fields = [a["name"] for a in definition["axes"]] + ["seed"] + sweep.METRICS + sweep.use_case_fields(definition)
+    for row in rows:
+        row.update({field: 0.5 for field in sweep.use_case_fields(definition)})
     with open(os.path.join(directory, "runs.csv"), "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
@@ -126,6 +128,40 @@ class TestVersion(unittest.TestCase):
         # is recorded as `modified`, beside the version rather than inside it.
         version = sweep.own_version()
         self.assertRegex(version, r"^\d+\.\d+\.\d+(-dev\.\d+\+[0-9a-f]{7})?$")
+
+
+TURN_BACK = [{"label": "turn-back", "kind": "turn-back", "params": {"level": "moderate"}}]
+
+
+class TestUseCases(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir)
+
+    def test_a_run_records_each_use_cases_summary_under_its_label(self):
+        row = sweep.use_case_row("turn-back", {
+            "opportunities": 10, "in_time": 7, "never": 1, "unwinnable": 2, "in_time_share": 0.7,
+            "latency_p50_seconds": 42.5, "latency_p95_seconds": 90, "slack_p50_seconds": None})
+        self.assertEqual(row, {"turn-back.decisions": 10, "turn-back.in_time_share": 0.7, "turn-back.never": 1,
+                               "turn-back.unwinnable": 2, "turn-back.latency_p50_s": 42.5,
+                               "turn-back.slack_p50_s": ""})
+
+    def test_a_sweep_that_scores_no_use_case_records_the_columns_it_always_did(self):
+        self.assertEqual(sweep.use_case_fields(definition()), [])
+
+    def test_a_use_case_column_is_reported_and_defined_like_any_other(self):
+        recorded(self.dir, definition(use_cases=TURN_BACK, columns=["sla_breaches", "turn-back.in_time_share"],
+                                      compare=["turn-back.in_time_share"]))
+        sweep.write_report(self.dir, notes_path=os.path.join(self.dir, "no-notes.md"))
+        with open(os.path.join(self.dir, "report.md")) as f:
+            report = f.read()
+        self.assertEqual(header_after(report, "Results"), "| Arm | Breaches | Turn-back: in time |")
+        self.assertEqual(header_after(report, "Against"), "| Arm | Turn-back: in time |")
+        self.assertIn("**Turn-back: in time**", report)
+
+    def test_two_use_cases_under_one_label_are_refused_naming_it(self):
+        with self.assertRaisesRegex(ValueError, r"label 'turn-back' is used twice"):
+            sweep.use_case_fields(definition(use_cases=TURN_BACK * 2))
 
 
 class TestBuilds(unittest.TestCase):

@@ -182,6 +182,10 @@ def run_sweep(base, sweep_path, reports_dir, parallel=4):
             raise RuntimeError(f"run {run_id} ({arm_name(labels)}, seed {seed}) ended {status}: "
                                f"{detail['run'].get('error', '')}")
         row = measure(base, run_id, interval)
+        for case in use_cases(sweep):
+            scored = call(base, "POST", f"/api/runs/{run_id}/use-cases",
+                          {"kind": case["kind"], "params": case.get("params", {})})
+            row.update(use_case_row(case["label"], scored["summary"]))
         row.update(labels)
         row["seed"] = seed
         done[0] += 1
@@ -194,7 +198,7 @@ def run_sweep(base, sweep_path, reports_dir, parallel=4):
         rows = list(pool.map(execute, jobs))
 
     axis_names = [axis["name"] for axis in sweep["axes"]]
-    fields = axis_names + ["seed"] + METRICS
+    fields = axis_names + ["seed"] + METRICS + use_case_fields(sweep)
     with open(os.path.join(out_dir, "runs.csv"), "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
@@ -347,24 +351,78 @@ INTENT_COMPARED = [
 ]
 
 
+# ------------------------------------------------------------- use cases
+
+# What a run records of each use case a sweep scores it for: from the summary
+# simlab-api serves, (field suffix, summary key, heading, places). A sweep names
+# its cases with a label, and the fields are "label.suffix".
+USE_CASE_MEASURES = [
+    ("decisions", "opportunities", "decisions", 0),
+    ("in_time_share", "in_time_share", "in time", 2),
+    ("never", "never", "never had it", 0),
+    ("unwinnable", "unwinnable", "unwinnable", 0),
+    ("latency_p50_s", "latency_p50_seconds", "latency p50 s", 0),
+    ("slack_p50_s", "slack_p50_seconds", "slack p50 s", 0),
+]
+
+
+def use_cases(sweep):
+    """The use cases a sweep scores every run for: label, kind and params."""
+    cases = sweep.get("use_cases", [])
+    seen = set()
+    for case in cases:
+        label = case.get("label", "")
+        if not label or not case.get("kind"):
+            raise ValueError(f"{sweep['name']}: a use case needs a label and a kind, got {case}")
+        if label in seen:
+            raise ValueError(f"{sweep['name']}: use case label '{label}' is used twice; each names its own columns")
+        seen.add(label)
+    return cases
+
+
+def use_case_fields(sweep):
+    return [f"{case['label']}.{suffix}" for case in use_cases(sweep) for suffix, *_ in USE_CASE_MEASURES]
+
+
+def use_case_row(label, summary):
+    """A run's fields for one use case, from the summary simlab-api served.
+    What the summary has no number for is left empty, as in any other field."""
+    return {f"{label}.{suffix}": ("" if summary.get(key) is None else summary[key])
+            for suffix, key, *_ in USE_CASE_MEASURES}
+
+
+def columns_of(sweep):
+    """Every column the sweep's report can show: the ones every run measures,
+    and the ones for the use cases it scores."""
+    out = dict(COLUMNS)
+    for case in use_cases(sweep):
+        name = case["label"][:1].upper() + case["label"][1:]
+        for suffix, _, heading, places in USE_CASE_MEASURES:
+            out[f"{case['label']}.{suffix}"] = (f"{name}: {heading}", places)
+    return out
+
+
 def named(sweep, key, default):
     fields = sweep.get(key, default)
-    unknown = [f for f in fields if f not in COLUMNS]
+    columns = columns_of(sweep)
+    unknown = [f for f in fields if f not in columns]
     if unknown:
         raise ValueError(f"{sweep['name']}: {key} names {', '.join(unknown)}, which a report cannot show; "
-                         f"it can show {', '.join(COLUMNS)}")
+                         f"it can show {', '.join(columns)}")
     return fields
 
 
 def headline(sweep):
     """The results table's columns, as (field, heading, places)."""
-    return [(field, *COLUMNS[field]) for field in named(sweep, "columns", INTENT_COLUMNS)]
+    columns = columns_of(sweep)
+    return [(field, *columns[field]) for field in named(sweep, "columns", INTENT_COLUMNS)]
 
 
 def compared(sweep):
     """The comparison table's columns, as (field, heading). A heading loses its
     unit there, since what the table shows is a change in per cent."""
-    return [(field, COLUMNS[field][0].removesuffix(" s")) for field in named(sweep, "compare", INTENT_COMPARED)]
+    columns = columns_of(sweep)
+    return [(field, columns[field][0].removesuffix(" s")) for field in named(sweep, "compare", INTENT_COMPARED)]
 
 
 # What each column means, for a sweep that names its columns.
@@ -407,8 +465,32 @@ def definitions(sweep):
     if "columns" not in sweep and "compare" not in sweep:
         return DEFINITIONS
     fields = list(dict.fromkeys(f for f, *_ in headline(sweep) + compared(sweep)))
-    return "".join(f"- {DEFINED[f]}\n" for f in fields) + \
+    defined = dict(DEFINED, **use_case_definitions(sweep))
+    return "".join(f"- {defined[f]}\n" for f in fields) + \
         "- Every figure is the mean over seeds, with the range across seeds beneath where\n  the seeds disagree.\n"
+
+
+def use_case_definitions(sweep):
+    """What each use-case column means, naming the case and the parameters it
+    was scored with."""
+    out = {}
+    for case in use_cases(sweep):
+        label = case["label"]
+        name = label[:1].upper() + label[1:]
+        params = json.dumps(case.get("params", {}), sort_keys=True)
+        what = f"the `{case['kind']}` decisions (parameters `{params}`, the rest default)"
+        out.update({
+            f"{label}.decisions": f"**{name}: decisions**: how many {what} a run gave.",
+            f"{label}.in_time_share": f"**{name}: in time**: the share of {what} whose information arrived "
+                                      f"no later than the decision closed.",
+            f"{label}.never": f"**{name}: never had it**: {what} whose information never arrived.",
+            f"{label}.unwinnable": f"**{name}: unwinnable**: {what} that closed no later than they opened.",
+            f"{label}.latency_p50_s": f"**{name}: latency p50 s**: the median seconds from the event to the "
+                                      f"information, over {what} that had it.",
+            f"{label}.slack_p50_s": f"**{name}: slack p50 s**: the median seconds to spare, over {what} "
+                                    f"that had it in time.",
+        })
+    return out
 
 
 # What an intent sweep's columns mean, worded together.
