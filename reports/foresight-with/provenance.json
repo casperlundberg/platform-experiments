@@ -1,0 +1,26 @@
+{
+  "recorded_at": "2026-09-22T08:08:20+00:00",
+  "command": "make -C platform-experiments sweep S=foresight-with",
+  "simlab_api": {
+    "version": "3.0.0",
+    "commit": "1dcaed0addff6f0a22fd5142744c6bcaad9e548c",
+    "modified": false,
+    "go_version": "go1.26.7",
+    "platform": "linux/amd64"
+  },
+  "autoscaler": {
+    "version": "2.0.0",
+    "commit": "0097074397271315fbf369fef27997ce8e5ef298",
+    "modified": false,
+    "go_version": "go1.26.7",
+    "platform": "linux/amd64"
+  },
+  "platform_experiments": {
+    "version": "1.0.1-dev.1+3979e30",
+    "commit": "3979e30064e744206acba4a42cc31f365e38ad57",
+    "modified": false
+  },
+  "runs": 36,
+  "wall_seconds": 637,
+  "runs_csv_sha256": "53c7a8affefa1b3212182c6fd5109d33fce62544b3edd01c4d3ee33010ad0359"
+}
