@@ -6,6 +6,10 @@
 # what it says.
 set -euo pipefail
 
+# These run inside a release's own checks, which name this repository's branch
+# in RELEASE_BRANCH; each case says which branch it means, so none inherits it.
+unset RELEASE_BRANCH
+
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 release="$here/release.sh"
 failures=0
