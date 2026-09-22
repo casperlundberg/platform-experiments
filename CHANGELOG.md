@@ -16,6 +16,18 @@ same definition, on the same services, print the same numbers?**
   column, a brief — and every number already recorded is as it was.
 - **PATCH** — a fix that moves no number: wording, documentation, tooling.
 
+## 1.1.0 — unreleased
+
+MINOR: sweeps added; every number already recorded is as it was.
+
+- Two sweeps asking how much of what decay did came from knowing where people
+  would walk: `foresight-with` (simlab-api 3.0.0) and `foresight-without`
+  (simlab-api 4.0.0-dev, which protects a person along every tunnel they could
+  reach), both on autoscaler 2.0.0. Their reports name this repository
+  1.0.1-dev.1: they began before this section existed, so the label says
+  patch where this says minor.
+- Experiment 005 names its builds on its verdict, as the others do.
+
 ## 1.0.0 — 2026-09-22
 
 The first versioned release. Reports and briefs made before it name this

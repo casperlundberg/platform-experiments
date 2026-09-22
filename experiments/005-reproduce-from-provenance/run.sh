@@ -26,6 +26,8 @@ harness::ok "autoscaler $(git -C "$WORK/src/autoscaler" rev-parse --short HEAD),
 harness::postgres
 harness::start_autoscaler
 harness::start_simlab
+VERSIONS="$(harness::versions)"
+harness::ok "$VERSIONS"
 
 harness::log "Recording a run that exercises everything a run records"
 curl -sf "$API/api/mines" -H 'Content-Type: application/json' -d '{
