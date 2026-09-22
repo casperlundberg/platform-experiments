@@ -24,12 +24,12 @@ location comes 36–38 s after the event, and a unit reaches a zone minutes late
 | earthquake | 85 → 89 → 94 % | 73 → 77 → 86 % | 76 → 80 → 83 % |
 
 Decay helps where contention makes the tail late: under the earthquake it gets
-four more turn-back decisions in a hundred their location in time, five more
-reroutes and four more ways out. The oracle's ceiling is the same ordering
-told the truth; it doubles those gains. Way-out stays lowest because a unit
+four more turn-back decisions in a hundred their location in time, four more
+reroutes and four more ways out. The oracle — the same ordering told the
+truth — gains two to three times as much. Way-out stays lowest because a unit
 already inside a zone often leaves within a minute, and reroute cannot rise
-above what the tunnels allow: 13 % of reroute decisions come after the unit's
-last junction and cannot be won by any processing.
+above what the tunnels allow: 12–13 % of reroute decisions come after the
+unit's last junction and cannot be won by any processing.
 
 **A location good enough to warn is much rarer in time, and there decay does
 more.**
@@ -42,12 +42,12 @@ more.**
 
 A first location from four or five picks is often too far out for its zone to
 reach the unit, and the warning waits for the final location — which is where
-ordering matters: decay adds five to seven decisions in a hundred on every day,
-and the oracle twenty more. **The gap between decay and the oracle is the
+ordering matters: decay adds three to seven decisions in a hundred on every day,
+and the oracle eight to twenty-two more. **The gap between decay and the oracle is the
 finding.** With locations good enough to act on as the measure, decay from the
-mine's own estimates recovers about a quarter to a third of what perfect
-knowledge of which events matter would (turn-back under the earthquake: 58 →
-64 % against 85 %). What stands between is knowing sooner which events those
+mine's own estimates recovers a fifth to a third of what perfect knowledge of
+which events matter would (turn-back under the earthquake: 58 → 64 % against
+85 %). What stands between is knowing sooner which events those
 are, and how accurately they are located — not how fast processing is.
 
 **Machines** (turn-back for the autonomous fleet only, use case 10) follow the
