@@ -179,7 +179,7 @@ class TestClosureMaps(unittest.TestCase):
         self.assertEqual(row, {"as drawn.covered_share": 0.82, "as drawn.false_share": 0.31,
                                "as drawn.mean_closed_share": 0.04, "as drawn.peak_closed_share": 0.4,
                                "as drawn.complete_p50_s": 38, "as drawn.complete_p95_s": "",
-                               "as drawn.never_complete": 100})
+                               "as drawn.never_complete": 100, "as drawn.events": 2000})
 
     def test_a_sweep_that_draws_no_closure_map_records_the_columns_it_always_did(self):
         self.assertEqual(sweep.closure_fields(definition()), [])

@@ -404,6 +404,7 @@ CLOSURE_MEASURES = [
     ("complete_p50_s", "complete_p50_seconds", "complete p50 s", 0),
     ("complete_p95_s", "complete_p95_seconds", "complete p95 s", 0),
     ("never_complete", "never_complete", "never complete", 0),
+    ("events", "events", "events with ground to close", 0),
 ]
 
 
@@ -563,6 +564,8 @@ def closure_definitions(sweep):
             f"{label}.complete_p95_s": f"**{name}: complete p95 s**: the same at the 95th percentile.",
             f"{label}.never_complete": f"**{name}: never complete**: events {what} never covered whole, "
                                        f"within their window.",
+            f"{label}.events": f"**{name}: events with ground to close**: events whose true ground motion "
+                               f"reached the level over some tunnel, which {what} had to cover.",
         })
     return out
 
