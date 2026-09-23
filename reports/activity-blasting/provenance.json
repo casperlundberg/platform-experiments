@@ -1,0 +1,26 @@
+{
+  "recorded_at": "2026-09-23T05:33:18+00:00",
+  "command": "make -C platform-experiments sweep S=activity-blasting",
+  "simlab_api": {
+    "version": "4.0.0-dev.15+42e0e8a",
+    "commit": "42e0e8a899016f39480a4c92fe2f1540fa691a38",
+    "modified": false,
+    "go_version": "go1.26.7",
+    "platform": "linux/amd64"
+  },
+  "autoscaler": {
+    "version": "2.0.0",
+    "commit": "0097074397271315fbf369fef27997ce8e5ef298",
+    "modified": false,
+    "go_version": "go1.26.7",
+    "platform": "linux/amd64"
+  },
+  "platform_experiments": {
+    "version": "1.1.0-dev.8+a680c09",
+    "commit": "a680c09b5de1b73c0f8396264d555cb6efc18737",
+    "modified": false
+  },
+  "runs": 48,
+  "wall_seconds": 530,
+  "runs_csv_sha256": "ebe6410726497fa330308ab736f4fa3984dcfa97587b057e20486908501a4c81"
+}

@@ -1,0 +1,238 @@
+{
+  "name": "activity-blasting",
+  "title": "When the mine blasts",
+  "question": "A worked mine's seismicity follows its blasting: does when it blasts \u2014 at night as LKAB fires, in the day, spread through the night, or once \u2014 change what decay is worth to the decisions the mine has to make?",
+  "build": {
+    "autoscaler": "v2.0.0",
+    "simlab-api": "42e0e8a"
+  },
+  "mine": {
+    "id": "workday",
+    "name": "Workday mine",
+    "sensors": 30,
+    "background_rate_per_hour": 91,
+    "description": "Calibrated to an operational seismic-processing catalogue: 30 sensors and 91 events an hour give about 1,680 pick jobs an hour, against the 1,644 an hour that catalogue averages on a typical day."
+  },
+  "scenario": {
+    "duration_seconds": 86400,
+    "job_seconds": 28,
+    "pick_jitter_seconds": 0.005,
+    "priority_mix": {
+      "100": 22.2,
+      "50": 51.0,
+      "0": 26.7
+    },
+    "description": "A day. Job mix and duration follow the operational catalogue: 22.2 % associate (priority 100), 51.0 % locate (50) and 26.7 % pick (0), and a weighted mean execution time of 28 s.",
+    "activity": {}
+  },
+  "run": {
+    "decision_interval_seconds": 15
+  },
+  "settings": {
+    "decision_interval_seconds": 15,
+    "horizon_seconds": 900,
+    "simulation_step_seconds": 15,
+    "deadline_seconds_by_priority": {
+      "400": 30,
+      "100": 60,
+      "50": 300,
+      "25": 43200,
+      "0": 86400
+    },
+    "default_deadline_seconds": 86400,
+    "local_executor_cap": 12,
+    "cloud_executor_cap": 60,
+    "min_local_executors": 1,
+    "local_coldstart_seconds": 60,
+    "cloud_coldstart_seconds": 180,
+    "scale_up_cooldown_seconds": 0,
+    "max_scale_up_step": 50,
+    "local_scale_down_window_seconds": 900,
+    "cloud_scale_down_window_seconds": 300,
+    "cloud_min_lifetime_seconds": 600,
+    "safety_factor": 1.15,
+    "dry_run": false
+  },
+  "intent": {
+    "mode": "decay",
+    "knowledge": "estimate",
+    "pre_location": false,
+    "pre_location_magnitude": 1.5,
+    "protect": [
+      "person",
+      "crewed-vehicle",
+      "autonomous-vehicle"
+    ],
+    "lookahead_seconds": 300,
+    "protect_level": "moderate",
+    "promote_level": "high",
+    "margin_m": 0,
+    "location_uncertainty_m": 50,
+    "decay_to": -1,
+    "promote_to": 400,
+    "deadline_from": "arrival",
+    "restore": true,
+    "burst_exempt": [
+      "restored"
+    ]
+  },
+  "seeds": [
+    101,
+    202,
+    303,
+    404
+  ],
+  "axes": [
+    {
+      "name": "blasting",
+      "values": [
+        {
+          "label": "night, four blasts",
+          "scenario": {
+            "activity": {
+              "blasting": {
+                "start_seconds": 4500,
+                "window_seconds": 1800,
+                "every_seconds": 600
+              }
+            }
+          }
+        },
+        {
+          "label": "day, four blasts",
+          "scenario": {
+            "activity": {
+              "blasting": {
+                "start_seconds": 46800,
+                "window_seconds": 1800,
+                "every_seconds": 600
+              }
+            }
+          }
+        },
+        {
+          "label": "through the night",
+          "scenario": {
+            "activity": {
+              "blasting": {
+                "start_seconds": 3600,
+                "window_seconds": 14400,
+                "every_seconds": 1800
+              }
+            }
+          }
+        },
+        {
+          "label": "one a day",
+          "scenario": {
+            "activity": {
+              "blasting": {
+                "start_seconds": 4500,
+                "window_seconds": 0,
+                "every_seconds": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "intent",
+      "values": [
+        {
+          "label": "off",
+          "intent": {
+            "mode": "off"
+          }
+        },
+        {
+          "label": "decay",
+          "intent": {}
+        },
+        {
+          "label": "decay, oracle",
+          "intent": {
+            "knowledge": "truth"
+          }
+        }
+      ]
+    }
+  ],
+  "baseline": {
+    "intent": "off"
+  },
+  "use_cases": [
+    {
+      "label": "turn-back",
+      "kind": "turn-back",
+      "params": {}
+    },
+    {
+      "label": "turn-back warned",
+      "kind": "turn-back",
+      "params": {
+        "need": "warning"
+      }
+    },
+    {
+      "label": "way-out",
+      "kind": "way-out",
+      "params": {}
+    },
+    {
+      "label": "way-out warned",
+      "kind": "way-out",
+      "params": {
+        "need": "warning"
+      }
+    },
+    {
+      "label": "reroute",
+      "kind": "reroute",
+      "params": {}
+    },
+    {
+      "label": "reroute warned",
+      "kind": "reroute",
+      "params": {
+        "need": "warning"
+      }
+    },
+    {
+      "label": "machines",
+      "kind": "turn-back",
+      "params": {
+        "kinds": [
+          "autonomous-vehicle"
+        ]
+      }
+    }
+  ],
+  "columns": [
+    "sla_breaches",
+    "cloud_hours",
+    "turn-back.decisions",
+    "turn-back.in_time_share",
+    "turn-back warned.in_time_share",
+    "turn-back.latency_p50_s",
+    "way-out.decisions",
+    "way-out.in_time_share",
+    "way-out warned.in_time_share",
+    "reroute.in_time_share",
+    "reroute warned.in_time_share",
+    "reroute.unwinnable",
+    "machines.in_time_share"
+  ],
+  "compare": [
+    "sla_breaches",
+    "cloud_hours",
+    "turn-back.in_time_share",
+    "turn-back warned.in_time_share",
+    "turn-back.latency_p50_s",
+    "way-out.in_time_share",
+    "way-out warned.in_time_share",
+    "reroute.in_time_share",
+    "reroute warned.in_time_share",
+    "machines.in_time_share"
+  ]
+}

@@ -33,6 +33,11 @@ MINOR: sweeps added; every number already recorded is as it was.
   can show and compare. A sweep that scores none records what it always did.
 - `use-cases-decay`: decay against the decisions it is for, on the calibrated
   days.
+- Two sweeps over a mine that is worked (simlab-api's activity model):
+  `activity-blasting` (night, day, spread through the night, one round a day)
+  and `activity-shape` (2, 4 or 8 faces × mostly blasting, balanced, mostly
+  working). Both are the calibrated day with its events moved to where mining
+  puts them, not a new rate.
 
 ## 1.0.0 — 2026-09-22
 
