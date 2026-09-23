@@ -4,7 +4,7 @@
   "question": "Scripted encounters give a unit a stated notice of high ground motion ahead of it. How much notice does the processing need for the decision to be made in time, and how much of that does ordering the queue by intent buy?",
   "build": {
     "autoscaler": "v2.0.0",
-    "simlab-api": "d7ea1f2"
+    "simlab-api": "f7cc25b"
   },
   "mine": {
     "id": "workday",
