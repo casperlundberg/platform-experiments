@@ -41,6 +41,8 @@ MINOR: sweeps added; every number already recorded is as it was.
   almost nothing, so one run can be read under several allowances and levels.
 - `closure-map`: that map against pick error, on the calibrated day and the
   earthquake, with and without decay.
+- `use-case-assumptions`: what the window and the reaction time decide. Scoring
+  is post-hoc, so all nine combinations of the two are read from the same runs.
 - `encounter-lead`: how much notice a decision needs, from simlab-api's
   scripted encounters — events placed where a unit is about to be, each giving
   it a stated notice of high ground motion — over 30, 60, 120 and 300 seconds,

@@ -1,0 +1,241 @@
+{
+  "name": "use-case-assumptions",
+  "title": "How much the assumptions decide",
+  "question": "Two numbers in every use-case result are assumptions: how long after an event its zone still matters, and how long before the moment it matters a unit has to be told. Does what decay is worth to a decision survive changing them?",
+  "build": {
+    "autoscaler": "v2.0.0",
+    "simlab-api": "d7ea1f2"
+  },
+  "mine": {
+    "id": "workday",
+    "name": "Workday mine",
+    "sensors": 30,
+    "background_rate_per_hour": 91,
+    "description": "Calibrated to an operational seismic-processing catalogue: 30 sensors and 91 events an hour give about 1,680 pick jobs an hour, against the 1,644 an hour that catalogue averages on a typical day."
+  },
+  "scenario": {
+    "duration_seconds": 86400,
+    "job_seconds": 28,
+    "pick_jitter_seconds": 0.005,
+    "priority_mix": {
+      "100": 22.2,
+      "50": 51.0,
+      "0": 26.7
+    },
+    "description": "A day. Job mix and duration follow the operational catalogue: 22.2 % associate (priority 100), 51.0 % locate (50) and 26.7 % pick (0), and a weighted mean execution time of 28 s."
+  },
+  "run": {
+    "decision_interval_seconds": 15
+  },
+  "settings": {
+    "decision_interval_seconds": 15,
+    "horizon_seconds": 900,
+    "simulation_step_seconds": 15,
+    "deadline_seconds_by_priority": {
+      "400": 30,
+      "100": 60,
+      "50": 300,
+      "25": 43200,
+      "0": 86400
+    },
+    "default_deadline_seconds": 86400,
+    "local_executor_cap": 12,
+    "cloud_executor_cap": 60,
+    "min_local_executors": 1,
+    "local_coldstart_seconds": 60,
+    "cloud_coldstart_seconds": 180,
+    "scale_up_cooldown_seconds": 0,
+    "max_scale_up_step": 50,
+    "local_scale_down_window_seconds": 900,
+    "cloud_scale_down_window_seconds": 300,
+    "cloud_min_lifetime_seconds": 600,
+    "safety_factor": 1.15,
+    "dry_run": false
+  },
+  "intent": {
+    "mode": "decay",
+    "knowledge": "estimate",
+    "pre_location": false,
+    "pre_location_magnitude": 1.5,
+    "protect": [
+      "person",
+      "crewed-vehicle",
+      "autonomous-vehicle"
+    ],
+    "lookahead_seconds": 300,
+    "protect_level": "moderate",
+    "promote_level": "high",
+    "margin_m": 0,
+    "location_uncertainty_m": 50,
+    "decay_to": -1,
+    "promote_to": 400,
+    "deadline_from": "arrival",
+    "restore": true,
+    "burst_exempt": [
+      "restored"
+    ]
+  },
+  "seeds": [
+    101,
+    202,
+    303,
+    404
+  ],
+  "axes": [
+    {
+      "name": "day",
+      "values": [
+        {
+          "label": "workday",
+          "scenario": {
+            "bursts": []
+          }
+        },
+        {
+          "label": "earthquake",
+          "scenario": {
+            "bursts": [
+              {
+                "at_seconds": 28800,
+                "magnitude": 21,
+                "aftershock_decay_seconds": 21600,
+                "main_magnitude": 4.0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "intent",
+      "values": [
+        {
+          "label": "off",
+          "intent": {
+            "mode": "off"
+          }
+        },
+        {
+          "label": "decay",
+          "intent": {}
+        },
+        {
+          "label": "decay, oracle",
+          "intent": {
+            "knowledge": "truth"
+          }
+        }
+      ]
+    }
+  ],
+  "baseline": {
+    "intent": "off"
+  },
+  "use_cases": [
+    {
+      "label": "10 min, 15 s",
+      "kind": "turn-back",
+      "params": {
+        "window_seconds": 600,
+        "reaction_seconds": 15,
+        "need": "warning"
+      }
+    },
+    {
+      "label": "10 min, 30 s",
+      "kind": "turn-back",
+      "params": {
+        "window_seconds": 600,
+        "reaction_seconds": 30,
+        "need": "warning"
+      }
+    },
+    {
+      "label": "10 min, 120 s",
+      "kind": "turn-back",
+      "params": {
+        "window_seconds": 600,
+        "reaction_seconds": 120,
+        "need": "warning"
+      }
+    },
+    {
+      "label": "30 min, 15 s",
+      "kind": "turn-back",
+      "params": {
+        "window_seconds": 1800,
+        "reaction_seconds": 15,
+        "need": "warning"
+      }
+    },
+    {
+      "label": "30 min, 30 s",
+      "kind": "turn-back",
+      "params": {
+        "window_seconds": 1800,
+        "reaction_seconds": 30,
+        "need": "warning"
+      }
+    },
+    {
+      "label": "30 min, 120 s",
+      "kind": "turn-back",
+      "params": {
+        "window_seconds": 1800,
+        "reaction_seconds": 120,
+        "need": "warning"
+      }
+    },
+    {
+      "label": "60 min, 15 s",
+      "kind": "turn-back",
+      "params": {
+        "window_seconds": 3600,
+        "reaction_seconds": 15,
+        "need": "warning"
+      }
+    },
+    {
+      "label": "60 min, 30 s",
+      "kind": "turn-back",
+      "params": {
+        "window_seconds": 3600,
+        "reaction_seconds": 30,
+        "need": "warning"
+      }
+    },
+    {
+      "label": "60 min, 120 s",
+      "kind": "turn-back",
+      "params": {
+        "window_seconds": 3600,
+        "reaction_seconds": 120,
+        "need": "warning"
+      }
+    }
+  ],
+  "columns": [
+    "sla_breaches",
+    "10 min, 15 s.decisions",
+    "10 min, 15 s.in_time_share",
+    "10 min, 30 s.in_time_share",
+    "10 min, 120 s.in_time_share",
+    "30 min, 15 s.in_time_share",
+    "30 min, 30 s.in_time_share",
+    "30 min, 120 s.in_time_share",
+    "60 min, 15 s.in_time_share",
+    "60 min, 30 s.in_time_share",
+    "60 min, 120 s.in_time_share"
+  ],
+  "compare": [
+    "10 min, 15 s.in_time_share",
+    "10 min, 30 s.in_time_share",
+    "10 min, 120 s.in_time_share",
+    "30 min, 15 s.in_time_share",
+    "30 min, 30 s.in_time_share",
+    "30 min, 120 s.in_time_share",
+    "60 min, 15 s.in_time_share",
+    "60 min, 30 s.in_time_share",
+    "60 min, 120 s.in_time_share"
+  ]
+}
