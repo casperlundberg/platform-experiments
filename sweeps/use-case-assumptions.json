@@ -4,7 +4,7 @@
   "question": "Two numbers in every use-case result are assumptions: how long after an event its zone still matters, and how long before the moment it matters a unit has to be told. Does what decay is worth to a decision survive changing them?",
   "build": {
     "autoscaler": "v2.0.0",
-    "simlab-api": "d7ea1f2"
+    "simlab-api": "f7cc25b"
   },
   "mine": {
     "id": "workday",
