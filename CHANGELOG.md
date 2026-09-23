@@ -41,6 +41,10 @@ MINOR: sweeps added; every number already recorded is as it was.
   almost nothing, so one run can be read under several allowances and levels.
 - `closure-map`: that map against pick error, on the calibrated day and the
   earthquake, with and without decay.
+- `encounter-lead`: how much notice a decision needs, from simlab-api's
+  scripted encounters — events placed where a unit is about to be, each giving
+  it a stated notice of high ground motion — over 30, 60, 120 and 300 seconds,
+  with intent off, decaying and told the truth.
 - Two sweeps over a mine that is worked (simlab-api's activity model):
   `activity-blasting` (night, day, spread through the night, one round a day)
   and `activity-shape` (2, 4 or 8 faces × mostly blasting, balanced, mostly
