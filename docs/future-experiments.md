@@ -55,20 +55,20 @@ gets a turn-around signal and turns back.
 
 ### Case 2 — several imperfect hypocentres
 
-Several smaller events, each with an imperfect estimate, give standalone risk
-zones and overlapping ones.
+**Built.** `simlab-api`'s closure map (`POST /api/runs/{id}/closure`,
+`usecase.Closure`) draws the ground the mine would keep people out of from the
+locations it had, as a union over events, and measures it against the ground
+its events really made dangerous: metre-seconds of tunnel missed, metre-seconds
+closed that nothing endangered, how much of the mine is shut, and how long
+after each event the map covered all of it. Swept over pick error and over how
+much extra a cautious mine closes in `sweeps/closure-map.json`.
 
-- **The question:** does a union of zones built from imperfect estimates still
-  cover where the true hazard is, and how much of the mine does it close off
-  that did not need closing?
-- **Measure:** true zones missed by the estimated union (misses); estimated
-  area with no true hazard (false closures); how both move with pick error and
-  with the allowance for location error — fixed, and per location.
-- **A "no" looks like:** misses growing as events cluster, because overlaps
-  hide an estimate that is badly out behind one that is right.
-- **Relates to:** the pick-jitter sweep, which found a fixed allowance fails
-  once pick error grows; overlapping zones are where a per-location allowance
-  should show its worth.
+What is left of the entry: **a per-location allowance.** The zones a run
+records are widened by one fixed 50 m, and the pick-jitter sweep found a fixed
+allowance fails once pick error grows. A location carries its own RMS residual
+and pick count, so an allowance from those is a change to how `internal/workload`
+records zones — and the closure map is the measure that would show whether it
+is worth making.
 
 ### Case 3 — the safest way out
 

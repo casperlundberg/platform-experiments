@@ -33,6 +33,14 @@ MINOR: sweeps added; every number already recorded is as it was.
   can show and compare. A sweep that scores none records what it always did.
 - `use-cases-decay`: decay against the decisions it is for, on the calibrated
   days.
+- A sweep can draw closure maps of every run (`"closures": [{"label",
+  "params"}]`, simlab-api's use case 2), recording each map's summary under its
+  label as columns a report can show and compare: the dangerous ground it
+  closed, the ground it closed needlessly, how much of the mine it shuts, and
+  how long after an event it covered all of it. Several maps of one run cost
+  almost nothing, so one run can be read under several allowances and levels.
+- `closure-map`: that map against pick error, on the calibrated day and the
+  earthquake, with and without decay.
 - Two sweeps over a mine that is worked (simlab-api's activity model):
   `activity-blasting` (night, day, spread through the night, one round a day)
   and `activity-shape` (2, 4 or 8 faces × mostly blasting, balanced, mostly

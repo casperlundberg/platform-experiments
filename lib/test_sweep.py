@@ -32,9 +32,10 @@ def recorded(directory, definition):
         for seed in definition["seeds"]:
             row = {field: 10 * seed for field in sweep.METRICS}
             rows.append({**row, **labels, "seed": seed})
-    fields = [a["name"] for a in definition["axes"]] + ["seed"] + sweep.METRICS + sweep.use_case_fields(definition)
+    scored = sweep.use_case_fields(definition) + sweep.closure_fields(definition)
+    fields = [a["name"] for a in definition["axes"]] + ["seed"] + sweep.METRICS + scored
     for row in rows:
-        row.update({field: 0.5 for field in sweep.use_case_fields(definition)})
+        row.update({field: 0.5 for field in scored})
     with open(os.path.join(directory, "runs.csv"), "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
@@ -131,6 +132,7 @@ class TestVersion(unittest.TestCase):
 
 
 TURN_BACK = [{"label": "turn-back", "kind": "turn-back", "params": {"level": "moderate"}}]
+CLOSURE = [{"label": "as drawn", "params": {}}]
 
 
 class TestUseCases(unittest.TestCase):
@@ -162,6 +164,39 @@ class TestUseCases(unittest.TestCase):
     def test_two_use_cases_under_one_label_are_refused_naming_it(self):
         with self.assertRaisesRegex(ValueError, r"label 'turn-back' is used twice"):
             sweep.use_case_fields(definition(use_cases=TURN_BACK * 2))
+
+
+class TestClosureMaps(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.dir)
+
+    def test_a_run_records_each_closure_maps_summary_under_its_label(self):
+        row = sweep.closure_row("as drawn", {
+            "ground_meters": 40000, "covered_share": 0.82, "false_share": 0.31, "mean_closed_share": 0.04,
+            "peak_closed_share": 0.4, "complete_p50_seconds": 38, "complete_p95_seconds": None,
+            "events": 2000, "complete": 1900, "never_complete": 100})
+        self.assertEqual(row, {"as drawn.covered_share": 0.82, "as drawn.false_share": 0.31,
+                               "as drawn.mean_closed_share": 0.04, "as drawn.peak_closed_share": 0.4,
+                               "as drawn.complete_p50_s": 38, "as drawn.complete_p95_s": "",
+                               "as drawn.never_complete": 100})
+
+    def test_a_sweep_that_draws_no_closure_map_records_the_columns_it_always_did(self):
+        self.assertEqual(sweep.closure_fields(definition()), [])
+
+    def test_a_closure_column_is_reported_and_defined_like_any_other(self):
+        recorded(self.dir, definition(closures=CLOSURE, columns=["sla_breaches", "as drawn.covered_share"],
+                                      compare=["as drawn.covered_share"]))
+        sweep.write_report(self.dir, notes_path=os.path.join(self.dir, "no-notes.md"))
+        with open(os.path.join(self.dir, "report.md")) as f:
+            report = f.read()
+        self.assertEqual(header_after(report, "Results"), "| Arm | Breaches | As drawn: ground covered |")
+        self.assertIn("**As drawn: ground covered**", report)
+
+    def test_a_closure_map_sharing_a_use_cases_label_is_refused_naming_it(self):
+        with self.assertRaisesRegex(ValueError, r"'turn-back' is used twice"):
+            sweep.closure_fields(definition(use_cases=TURN_BACK,
+                                            closures=[{"label": "turn-back", "params": {}}]))
 
 
 class TestBuilds(unittest.TestCase):

@@ -186,6 +186,9 @@ def run_sweep(base, sweep_path, reports_dir, parallel=4):
             scored = call(base, "POST", f"/api/runs/{run_id}/use-cases",
                           {"kind": case["kind"], "params": case.get("params", {})})
             row.update(use_case_row(case["label"], scored["summary"]))
+        for drawn in closures(sweep):
+            mapped = call(base, "POST", f"/api/runs/{run_id}/closure", {"params": drawn.get("params", {})})
+            row.update(closure_row(drawn["label"], mapped["summary"]))
         row.update(labels)
         row["seed"] = seed
         done[0] += 1
@@ -198,7 +201,7 @@ def run_sweep(base, sweep_path, reports_dir, parallel=4):
         rows = list(pool.map(execute, jobs))
 
     axis_names = [axis["name"] for axis in sweep["axes"]]
-    fields = axis_names + ["seed"] + METRICS + use_case_fields(sweep)
+    fields = axis_names + ["seed"] + METRICS + use_case_fields(sweep) + closure_fields(sweep)
     with open(os.path.join(out_dir, "runs.csv"), "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
@@ -391,14 +394,58 @@ def use_case_row(label, summary):
             for suffix, key, *_ in USE_CASE_MEASURES}
 
 
+# What a run records of each closure map a sweep draws of it (use case 2): from
+# the summary simlab-api serves, (field suffix, summary key, heading, places).
+CLOSURE_MEASURES = [
+    ("covered_share", "covered_share", "ground covered", 3),
+    ("false_share", "false_share", "closed needlessly", 3),
+    ("mean_closed_share", "mean_closed_share", "mine closed", 3),
+    ("peak_closed_share", "peak_closed_share", "mine closed at worst", 3),
+    ("complete_p50_s", "complete_p50_seconds", "complete p50 s", 0),
+    ("complete_p95_s", "complete_p95_seconds", "complete p95 s", 0),
+    ("never_complete", "never_complete", "never complete", 0),
+]
+
+
+def closures(sweep):
+    """The closure maps a sweep draws of every run: label and params. Several
+    let one run be read under several allowances, which is the question case 2
+    asks."""
+    maps = sweep.get("closures", [])
+    seen = {case.get("label", "") for case in use_cases(sweep)}
+    for drawn in maps:
+        label = drawn.get("label", "")
+        if not label:
+            raise ValueError(f"{sweep['name']}: a closure map needs a label, got {drawn}")
+        if label in seen:
+            raise ValueError(f"{sweep['name']}: closure label '{label}' is used twice; each names its own columns")
+        seen.add(label)
+    return maps
+
+
+def closure_fields(sweep):
+    return [f"{drawn['label']}.{suffix}" for drawn in closures(sweep) for suffix, *_ in CLOSURE_MEASURES]
+
+
+def closure_row(label, summary):
+    """A run's fields for one closure map, from the summary simlab-api served."""
+    return {f"{label}.{suffix}": ("" if summary.get(key) is None else summary[key])
+            for suffix, key, *_ in CLOSURE_MEASURES}
+
+
 def columns_of(sweep):
     """Every column the sweep's report can show: the ones every run measures,
-    and the ones for the use cases it scores."""
+    the ones for the use cases it scores, and the ones for the closure maps it
+    draws."""
     out = dict(COLUMNS)
     for case in use_cases(sweep):
         name = case["label"][:1].upper() + case["label"][1:]
         for suffix, _, heading, places in USE_CASE_MEASURES:
             out[f"{case['label']}.{suffix}"] = (f"{name}: {heading}", places)
+    for drawn in closures(sweep):
+        name = drawn["label"][:1].upper() + drawn["label"][1:]
+        for suffix, _, heading, places in CLOSURE_MEASURES:
+            out[f"{drawn['label']}.{suffix}"] = (f"{name}: {heading}", places)
     return out
 
 
@@ -465,7 +512,7 @@ def definitions(sweep):
     if "columns" not in sweep and "compare" not in sweep:
         return DEFINITIONS
     fields = list(dict.fromkeys(f for f, *_ in headline(sweep) + compared(sweep)))
-    defined = dict(DEFINED, **use_case_definitions(sweep))
+    defined = dict(DEFINED, **use_case_definitions(sweep), **closure_definitions(sweep))
     return "".join(f"- {defined[f]}\n" for f in fields) + \
         "- Every figure is the mean over seeds, with the range across seeds beneath where\n  the seeds disagree.\n"
 
@@ -489,6 +536,33 @@ def use_case_definitions(sweep):
                                       f"information, over {what} that had it.",
             f"{label}.slack_p50_s": f"**{name}: slack p50 s**: the median seconds to spare, over {what} "
                                     f"that had it in time.",
+        })
+    return out
+
+
+def closure_definitions(sweep):
+    """What each closure column means, naming the parameters it was drawn
+    with."""
+    out = {}
+    for drawn in closures(sweep):
+        label = drawn["label"]
+        name = label[:1].upper() + label[1:]
+        params = json.dumps(drawn.get("params", {}), sort_keys=True)
+        what = f"the closure map drawn from the run's locations (parameters `{params}`, the rest default)"
+        out.update({
+            f"{label}.covered_share": f"**{name}: ground covered**: the share of the tunnel the events truly "
+                                      f"made dangerous, in metre-seconds, that {what} closed.",
+            f"{label}.false_share": f"**{name}: closed needlessly**: the share of what {what} closed that "
+                                    f"nothing endangered.",
+            f"{label}.mean_closed_share": f"**{name}: mine closed**: the share of the mine's tunnel {what} "
+                                          f"shuts, averaged over the run.",
+            f"{label}.peak_closed_share": f"**{name}: mine closed at worst**: the largest share of the mine's "
+                                          f"tunnel {what} shuts at one moment.",
+            f"{label}.complete_p50_s": f"**{name}: complete p50 s**: the median seconds from an event until "
+                                       f"{what} covered every dangerous metre of it.",
+            f"{label}.complete_p95_s": f"**{name}: complete p95 s**: the same at the 95th percentile.",
+            f"{label}.never_complete": f"**{name}: never complete**: events {what} never covered whole, "
+                                       f"within their window.",
         })
     return out
 
